@@ -625,30 +625,52 @@
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span> Salvando...';
 
-            const sale = { email: currentUser.email, date, product, quantity, unitPrice, total };
+            const sale = { 
+                id: editingId || Date.now(),
+                email: currentUser.email, 
+                date, 
+                product, 
+                quantity, 
+                unitPrice, 
+                total 
+            };
 
             try {
+                // Adicionar ou atualizar localmente primeiro
                 if (editingId) {
-                    sale.id = editingId;
-                    await fetch(API_URL, {
+                    const index = sales.findIndex(s => s.id === editingId);
+                    if (index !== -1) {
+                        sales[index] = sale;
+                    }
+                    
+                    // Enviar para o Apps Script
+                    fetch(API_URL, {
                         method: 'POST',
                         mode: 'no-cors',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ action: 'updateSale', ...sale })
-                    });
+                    }).catch(err => console.log('Erro ao atualizar no servidor:', err));
+                    
                     editingId = null;
                     document.getElementById('btnAddText').textContent = '➕ Adicionar Venda';
                 } else {
-                    await fetch(API_URL, {
+                    // Adicionar localmente
+                    sales.push(sale);
+                    
+                    // Enviar para o Apps Script em background
+                    fetch(API_URL, {
                         method: 'POST',
                         mode: 'no-cors',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ action: 'saveSale', ...sale })
-                    });
+                    }).catch(err => console.log('Erro ao salvar no servidor:', err));
                 }
 
+                // Salvar no localStorage como backup
+                localStorage.setItem(`sales_${currentUser.email}`, JSON.stringify(sales));
+
                 clearForm();
-                await loadSales();
+                displaySales();
 
             } catch (error) {
                 alert('Erro ao salvar venda. Tente novamente.');
@@ -668,6 +690,14 @@
 
         async function loadSales() {
             try {
+                // Tentar carregar do localStorage primeiro (funciona offline)
+                const savedSales = localStorage.getItem(`sales_${currentUser.email}`);
+                if (savedSales) {
+                    sales = JSON.parse(savedSales);
+                    displaySales();
+                }
+
+                // Tentar carregar do servidor em background
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -675,12 +705,14 @@
                 });
 
                 const data = await response.json();
-                if (data.success) {
+                if (data.success && data.sales) {
                     sales = data.sales;
+                    localStorage.setItem(`sales_${currentUser.email}`, JSON.stringify(sales));
                     displaySales();
                 }
             } catch (error) {
-                console.error('Erro ao carregar vendas:', error);
+                console.log('Usando dados locais:', error);
+                // Se falhar, usa os dados do localStorage que já foram carregados
                 displaySales();
             }
         }
@@ -750,14 +782,19 @@
             if (!confirm('Tem certeza que deseja excluir esta venda?')) return;
 
             try {
-                await fetch(API_URL, {
+                // Remover localmente
+                sales = sales.filter(s => s.id !== id);
+                localStorage.setItem(`sales_${currentUser.email}`, JSON.stringify(sales));
+                displaySales();
+
+                // Enviar para o servidor em background
+                fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'deleteSale', id })
-                });
+                }).catch(err => console.log('Erro ao deletar no servidor:', err));
 
-                await loadSales();
             } catch (error) {
                 alert('Erro ao excluir venda. Tente novamente.');
             }
@@ -813,6 +850,13 @@
             const savedUser = localStorage.getItem('user');
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
+                
+                // Carregar vendas do localStorage primeiro
+                const savedSales = localStorage.getItem(`sales_${currentUser.email}`);
+                if (savedSales) {
+                    sales = JSON.parse(savedSales);
+                }
+                
                 showMainScreen();
             }
         };
