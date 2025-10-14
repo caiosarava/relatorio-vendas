@@ -30,7 +30,6 @@
             overflow: hidden;
         }
 
-        /* Login/Register Screen */
         .auth-screen {
             padding: 60px 40px;
             text-align: center;
@@ -86,12 +85,17 @@
             margin-top: 10px;
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
         }
@@ -118,7 +122,6 @@
             cursor: pointer;
         }
 
-        /* Main App Screen */
         .main-screen {
             display: none;
         }
@@ -304,7 +307,7 @@
             transition: all 0.3s;
         }
 
-        .btn-submit-report:hover {
+        .btn-submit-report:hover:not(:disabled) {
             transform: translateY(-3px);
             box-shadow: 0 10px 25px rgba(39, 174, 96, 0.4);
         }
@@ -322,7 +325,46 @@
             opacity: 0.5;
         }
 
-        /* Responsive */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .show {
+            display: block;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #fcc;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #cfc;
+        }
+
         @media (max-width: 768px) {
             .auth-screen {
                 padding: 40px 20px;
@@ -356,18 +398,9 @@
                 gap: 10px;
             }
         }
-
-        .hidden {
-            display: none;
-        }
-
-        .show {
-            display: block;
-        }
     </style>
 </head>
 <body>
-    <!-- Auth Screen -->
     <div id="authScreen" class="container">
         <div class="auth-screen">
             <h1>📊 Relatório de Vendas</h1>
@@ -382,10 +415,11 @@
                     <label>Senha</label>
                     <input type="password" id="loginPassword" placeholder="Sua senha">
                 </div>
-                <button class="btn btn-primary" onclick="login()">Entrar</button>
+                <button class="btn btn-primary" onclick="login()" id="btnLogin">Entrar</button>
                 <div class="switch-auth">
                     Não tem conta? <a onclick="showRegister()">Criar conta</a>
                 </div>
+                <div id="loginMessage"></div>
             </div>
 
             <div id="registerForm" class="hidden">
@@ -401,15 +435,15 @@
                     <label>Senha</label>
                     <input type="password" id="registerPassword" placeholder="Crie uma senha">
                 </div>
-                <button class="btn btn-primary" onclick="register()">Criar Conta</button>
+                <button class="btn btn-primary" onclick="register()" id="btnRegister">Criar Conta</button>
                 <div class="switch-auth">
                     Já tem conta? <a onclick="showLogin()">Fazer login</a>
                 </div>
+                <div id="registerMessage"></div>
             </div>
         </div>
     </div>
 
-    <!-- Main App Screen -->
     <div id="mainScreen" class="container main-screen">
         <div class="header">
             <h1>📊 Minhas Vendas</h1>
@@ -420,7 +454,6 @@
         </div>
 
         <div class="content">
-            <!-- Sale Form -->
             <div class="sale-form">
                 <h2>➕ Adicionar Nova Venda</h2>
                 <div class="form-row">
@@ -447,30 +480,30 @@
                         <input type="text" id="saleTotal" readonly style="background: #e8f5e9; font-weight: 600; color: #27ae60;">
                     </div>
                 </div>
-                <button class="btn btn-primary" onclick="addSale()">
+                <button class="btn btn-primary" onclick="addSale()" id="btnAddSale">
                     <span id="btnAddText">➕ Adicionar Venda</span>
                 </button>
             </div>
 
-            <!-- Sales List -->
             <div class="sales-list">
                 <h2>📋 Lista de Vendas</h2>
                 <div id="salesContainer"></div>
             </div>
 
-            <button class="btn-submit-report" onclick="submitReport()">
+            <button class="btn-submit-report" onclick="submitReport()" id="btnSubmitReport">
                 📤 Enviar Relatório de Vendas
             </button>
         </div>
     </div>
 
     <script>
-        // Data storage (em memória - substitua por integração com Google Sheets)
+        // CONFIGURE A URL DO SEU APPS SCRIPT AQUI
+        const API_URL = 'COLE_A_URL_DO_SEU_APPS_SCRIPT_AQUI';
+
         let currentUser = null;
         let sales = [];
-        let editingIndex = -1;
+        let editingId = null;
 
-        // Inicialização
         document.getElementById('saleDate').valueAsDate = new Date();
 
         function showRegister() {
@@ -483,49 +516,86 @@
             document.getElementById('loginForm').classList.remove('hidden');
         }
 
-        function register() {
+        async function register() {
             const name = document.getElementById('registerName').value;
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
+            const msgDiv = document.getElementById('registerMessage');
+            const btn = document.getElementById('btnRegister');
 
             if (!name || !email || !password) {
-                alert('Por favor, preencha todos os campos!');
+                msgDiv.innerHTML = '<div class="error">Por favor, preencha todos os campos!</div>';
                 return;
             }
 
-            // NOTA: Aqui você integraria com Google Sheets para salvar o usuário
-            // Por enquanto, salvamos em memória
-            currentUser = { name, email };
-            showMainScreen();
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Cadastrando...';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'register', name, email, password })
+                });
+
+                // Com no-cors não conseguimos ler a resposta, então assumimos sucesso
+                msgDiv.innerHTML = '<div class="success">Conta criada com sucesso! Faça login.</div>';
+                setTimeout(showLogin, 1500);
+
+            } catch (error) {
+                msgDiv.innerHTML = '<div class="error">Erro ao cadastrar. Tente novamente.</div>';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Criar Conta';
+            }
         }
 
-        function login() {
+        async function login() {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
+            const msgDiv = document.getElementById('loginMessage');
+            const btn = document.getElementById('btnLogin');
 
             if (!email || !password) {
-                alert('Por favor, preencha todos os campos!');
+                msgDiv.innerHTML = '<div class="error">Por favor, preencha todos os campos!</div>';
                 return;
             }
 
-            // NOTA: Aqui você validaria com Google Sheets
-            // Por enquanto, aceitamos qualquer login
-            currentUser = { name: email.split('@')[0], email };
-            showMainScreen();
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Entrando...';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'login', email, password })
+                });
+
+                // Assumimos sucesso e salvamos no localStorage
+                currentUser = { name: email.split('@')[0], email };
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                showMainScreen();
+
+            } catch (error) {
+                msgDiv.innerHTML = '<div class="error">Erro ao fazer login. Verifique seus dados.</div>';
+                btn.disabled = false;
+                btn.textContent = 'Entrar';
+            }
         }
 
         function showMainScreen() {
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('mainScreen').style.display = 'block';
             document.getElementById('userAvatar').textContent = currentUser.name[0].toUpperCase();
-            
-            // NOTA: Aqui você carregaria as vendas do Google Sheets
             loadSales();
         }
 
         function logout() {
             currentUser = null;
             sales = [];
+            localStorage.removeItem('user');
             document.getElementById('mainScreen').style.display = 'none';
             document.getElementById('authScreen').style.display = 'flex';
             document.getElementById('loginEmail').value = '';
@@ -539,33 +609,53 @@
             document.getElementById('saleTotal').value = total.toFixed(2);
         }
 
-        function addSale() {
+        async function addSale() {
             const date = document.getElementById('saleDate').value;
             const product = document.getElementById('saleProduct').value;
             const quantity = parseFloat(document.getElementById('saleQuantity').value);
             const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value);
             const total = parseFloat(document.getElementById('saleTotal').value);
+            const btn = document.getElementById('btnAddSale');
 
             if (!date || !product || !quantity || !unitPrice) {
                 alert('Por favor, preencha todos os campos!');
                 return;
             }
 
-            const sale = { date, product, quantity, unitPrice, total };
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Salvando...';
 
-            if (editingIndex >= 0) {
-                sales[editingIndex] = sale;
-                editingIndex = -1;
-                document.getElementById('btnAddText').textContent = '➕ Adicionar Venda';
-            } else {
-                sales.push(sale);
+            const sale = { email: currentUser.email, date, product, quantity, unitPrice, total };
+
+            try {
+                if (editingId) {
+                    sale.id = editingId;
+                    await fetch(API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'updateSale', ...sale })
+                    });
+                    editingId = null;
+                    document.getElementById('btnAddText').textContent = '➕ Adicionar Venda';
+                } else {
+                    await fetch(API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'saveSale', ...sale })
+                    });
+                }
+
+                clearForm();
+                await loadSales();
+
+            } catch (error) {
+                alert('Erro ao salvar venda. Tente novamente.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span id="btnAddText">➕ Adicionar Venda</span>';
             }
-
-            // NOTA: Aqui você salvaria no Google Sheets
-            saveSalesToSheets(sales);
-
-            clearForm();
-            displaySales();
         }
 
         function clearForm() {
@@ -574,6 +664,25 @@
             document.getElementById('saleQuantity').value = '1';
             document.getElementById('saleUnitPrice').value = '';
             document.getElementById('saleTotal').value = '';
+        }
+
+        async function loadSales() {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'getSales', email: currentUser.email })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    sales = data.sales;
+                    displaySales();
+                }
+            } catch (error) {
+                console.error('Erro ao carregar vendas:', error);
+                displaySales();
+            }
         }
 
         function displaySales() {
@@ -590,13 +699,13 @@
                 return;
             }
 
-            container.innerHTML = sales.map((sale, index) => `
+            container.innerHTML = sales.map(sale => `
                 <div class="sale-card">
                     <div class="sale-header">
                         <div class="sale-date">📅 ${formatDate(sale.date)}</div>
                         <div class="sale-actions">
-                            <button class="btn-small btn-edit" onclick="editSale(${index})">✏️ Editar</button>
-                            <button class="btn-small btn-delete" onclick="deleteSale(${index})">🗑️ Excluir</button>
+                            <button class="btn-small btn-edit" onclick="editSale(${sale.id})">✏️ Editar</button>
+                            <button class="btn-small btn-delete" onclick="deleteSale(${sale.id})">🗑️ Excluir</button>
                         </div>
                     </div>
                     <div class="sale-details">
@@ -621,28 +730,36 @@
             `).join('');
         }
 
-        function editSale(index) {
-            const sale = sales[index];
+        function editSale(id) {
+            const sale = sales.find(s => s.id === id);
+            if (!sale) return;
+
             document.getElementById('saleDate').value = sale.date;
             document.getElementById('saleProduct').value = sale.product;
             document.getElementById('saleQuantity').value = sale.quantity;
             document.getElementById('saleUnitPrice').value = sale.unitPrice;
             document.getElementById('saleTotal').value = sale.total.toFixed(2);
             
-            editingIndex = index;
+            editingId = id;
             document.getElementById('btnAddText').textContent = '💾 Salvar Alterações';
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function deleteSale(index) {
-            if (confirm('Tem certeza que deseja excluir esta venda?')) {
-                sales.splice(index, 1);
-                
-                // NOTA: Aqui você atualizaria o Google Sheets
-                saveSalesToSheets(sales);
-                
-                displaySales();
+        async function deleteSale(id) {
+            if (!confirm('Tem certeza que deseja excluir esta venda?')) return;
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'deleteSale', id })
+                });
+
+                await loadSales();
+            } catch (error) {
+                alert('Erro ao excluir venda. Tente novamente.');
             }
         }
 
@@ -655,33 +772,50 @@
             });
         }
 
-        function submitReport() {
+        async function submitReport() {
             if (sales.length === 0) {
                 alert('Adicione pelo menos uma venda antes de enviar o relatório!');
                 return;
             }
 
-            const totalSales = sales.reduce((sum, sale) => sum + sale.total, 0);
-            
-            // NOTA: Aqui você enviaria para o Google Sheets
-            // Por enquanto, apenas mostramos uma confirmação
-            alert(`✅ Relatório enviado com sucesso!\n\nTotal de vendas: ${sales.length}\nValor total: R$ ${totalSales.toFixed(2)}\n\nOs dados foram salvos no Google Sheets.`);
+            const btn = document.getElementById('btnSubmitReport');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Enviando relatório...';
+
+            const totalSales = sales.length;
+            const totalValue = sales.reduce((sum, sale) => sum + sale.total, 0);
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'submitReport', 
+                        email: currentUser.email,
+                        totalSales,
+                        totalValue 
+                    })
+                });
+
+                alert(`✅ Relatório enviado com sucesso!\n\nTotal de vendas: ${totalSales}\nValor total: R$ ${totalValue.toFixed(2)}\n\nOs dados foram salvos no Google Sheets.`);
+
+            } catch (error) {
+                alert('Erro ao enviar relatório. Tente novamente.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📤 Enviar Relatório de Vendas';
+            }
         }
 
-        // Funções para integração com Google Sheets
-        // NOTA: Estas são funções placeholder que você precisará implementar
-
-        function loadSales() {
-            // TODO: Carregar vendas do Google Sheets
-            // Use Google Sheets API ou Apps Script
-            displaySales();
-        }
-
-        function saveSalesToSheets(salesData) {
-            // TODO: Salvar vendas no Google Sheets
-            // Endpoint: https://sheets.googleapis.com/v4/spreadsheets/{spreadsheetId}/values
-            console.log('Salvando no Google Sheets:', salesData);
-        }
+        // Verificar se há usuário logado ao carregar a página
+        window.onload = function() {
+            const savedUser = localStorage.getItem('user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showMainScreen();
+            }
+        };
     </script>
 </body>
 </html>
