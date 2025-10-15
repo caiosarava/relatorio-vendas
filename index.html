@@ -603,6 +603,12 @@
                     <label>Nome Completo</label>
                     <input type="text" id="registerName" placeholder="Seu nome">
                 </div>
+                 <!-- NOVO CAMPO ADICIONADO AQUI -->
+                <div class="form-group">
+                    <label>Nome do Empreendimento</label>
+                    <input type="text" id="registerVenture" placeholder="Ex: Minha Loja Digital">
+                </div>
+                 <!-- FIM NOVO CAMPO -->
                 <div class="form-group">
                     <label>Email</label>
                     <input type="email" id="registerEmail" placeholder="seu@email.com">
@@ -623,7 +629,8 @@
     <!-- TELA PRINCIPAL: REGISTRO DE VENDAS -->
     <div id="mainScreen" class="container main-screen">
         <div class="header">
-            <h1>✍️ Minhas Vendas</h1>
+            <!-- Título atualizado para exibir o nome do empreendimento -->
+            <h1 id="mainTitle">✍️ Minhas Vendas</h1>
             <div class="user-info">
                 <!-- Dropdown do Avatar para acessar o Relatório e Sair -->
                 <div class="avatar-dropdown" id="mainAvatarDropdown">
@@ -682,7 +689,7 @@
     <!-- TELA DE RELATÓRIO/DASHBOARD -->
     <div id="reportScreen" class="container report-screen">
         <div class="header">
-            <h1>📈 Relatório de Vendas</h1>
+            <h1 id="reportTitle">📈 Relatório de Vendas</h1>
             <div class="user-info">
                 <button class="btn-secondary-light" onclick="showMainScreen()">← Voltar para Vendas</button>
 
@@ -769,12 +776,14 @@
 
         async function register() {
             const name = document.getElementById('registerName').value;
+            const ventureName = document.getElementById('registerVenture').value; // NOVO CAMPO
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
             const msgDiv = document.getElementById('registerMessage');
             const btn = document.getElementById('btnRegister');
 
-            if (!name || !email || !password) {
+            // Validação atualizada
+            if (!name || !ventureName || !email || !password) {
                 msgDiv.innerHTML = '<div class="error">Por favor, preencha todos os campos!</div>';
                 return;
             }
@@ -799,7 +808,8 @@
                     return;
                 }
 
-                users.push({ name, email, password });
+                // Salva o nome do empreendimento
+                users.push({ name, ventureName, email, password }); 
                 localStorage.setItem('registeredUsers', JSON.stringify(users));
 
                 // Enviar para Google Sheets em background
@@ -807,7 +817,7 @@
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'register', name, email, password })
+                    body: JSON.stringify({ action: 'register', name, ventureName, email, password })
                 }).catch(err => console.log('Erro ao registrar no servidor:', err));
 
                 msgDiv.innerHTML = '<div class="success">Conta criada com sucesso! Faça login.</div>';
@@ -850,8 +860,8 @@
                     return;
                 }
 
-                // Login bem-sucedido
-                currentUser = { name: user.name, email: user.email };
+                // Login bem-sucedido: inclui ventureName
+                currentUser = { name: user.name, ventureName: user.ventureName || 'Minhas Vendas', email: user.email };
                 localStorage.setItem('user', JSON.stringify(currentUser));
 
                 // Tentar validar no servidor em background
@@ -890,10 +900,17 @@
             document.getElementById('mainScreen').style.display = 'flex';
             document.getElementById('reportScreen').style.display = 'none'; 
             
-            // Configurar avatares
+            // Configurar TÍTULOS e avatares
             const avatarLetter = currentUser.name[0].toUpperCase();
+            const ventureName = currentUser.ventureName || 'Minhas Vendas';
+            
             document.getElementById('userAvatar').textContent = avatarLetter;
             document.getElementById('reportAvatar').textContent = avatarLetter;
+            
+            // Atualiza os títulos da tela principal e relatório
+            document.getElementById('mainTitle').innerHTML = `✍️ ${ventureName}`;
+            document.getElementById('reportTitle').innerHTML = `📈 Relatório de Vendas: ${ventureName}`;
+
 
             loadSales();
         }
@@ -1359,13 +1376,13 @@
                     
                     // Verificar se o usuário está registrado
                     const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-                    const userExists = users.find(u => u.email === currentUser.email);
+                    // Adicionei uma verificação de usuário mais robusta
+                    const userExists = users.find(u => u.email === currentUser.email && u.name === currentUser.name && u.ventureName === currentUser.ventureName);
                     
                     if (!userExists) {
                         // Usuário não está registrado, fazer logout
                         localStorage.removeItem('user');
                         currentUser = null;
-                        // Substituído alert
                         console.error('Sessão inválida. Por favor, faça login novamente.');
                         return;
                     }
