@@ -4,7 +4,401 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatório de Vendas</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 1200px;
+            overflow: hidden;
+        }
+
+        .auth-screen {
+            padding: 60px 40px;
+            text-align: center;
+        }
+
+        .auth-screen h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .auth-screen p {
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 1.1em;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #f5f5f5;
+        }
+
+        .switch-auth {
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .switch-auth a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .main-screen {
+            display: none;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: white;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .btn-logout {
+            background: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: #c0392b;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .sale-form {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .sale-form h2 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 1.5em;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .sales-list h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .sale-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .sale-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .sale-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .sale-date {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .sale-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #2980b9;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+
+        .sale-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .sale-detail {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .sale-detail-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .sale-detail-value {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .total-value {
+            color: #27ae60;
+            font-size: 1.3em;
+        }
+
+        .btn-submit-report {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            padding: 20px;
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s;
+        }
+
+        .btn-submit-report:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(39, 174, 96, 0.4);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .show {
+            display: block;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #fcc;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #cfc;
+        }
+
+        @media (max-width: 768px) {
+            .auth-screen {
+                padding: 40px 20px;
+            }
+
+            .header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header h1 {
+                font-size: 1.3em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .sale-details {
+                grid-template-columns: 1fr;
+            }
+
+            .sale-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="authScreen" class="container">
@@ -62,12 +456,6 @@
         <div class="content">
             <div class="sale-form">
                 <h2>➕ Adicionar Nova Venda</h2>
-                <div class="form-row-full">
-                    <div class="form-group">
-                        <label>Nome do Empreendimento</label>
-                        <input type="text" id="businessName" placeholder="Ex: Padaria do João">
-                    </div>
-                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Data</label>
@@ -108,65 +496,437 @@
         </div>
     </div>
 
-    <!-- Dashboard Screen -->
-    <div id="dashboardScreen" class="container dashboard-screen">
-        <div class="dashboard-header">
-            <h1>📊 Dashboard de Vendas</h1>
-            <button class="btn-back" onclick="backToSales()">← Voltar</button>
-        </div>
+    <script>
+        // CONFIGURE A URL DO SEU APPS SCRIPT AQUI
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxv1edh1yQhpNY2cERNJk12kmusHVbfDhxM1HuiZl6FhdacgeYBiXT9R0PD0CeisF-Y/exec';
 
-        <div class="dashboard-content">
-            <h2 style="color: #333; margin-bottom: 20px;">Relatório do Mês Atual</h2>
+        let currentUser = null;
+        let sales = [];
+        let editingId = null;
+
+        document.getElementById('saleDate').valueAsDate = new Date();
+
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+        }
+
+        function showLogin() {
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+        }
+
+        async function register() {
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const msgDiv = document.getElementById('registerMessage');
+            const btn = document.getElementById('btnRegister');
+
+            if (!name || !email || !password) {
+                msgDiv.innerHTML = '<div class="error">Por favor, preencha todos os campos!</div>';
+                return;
+            }
+
+            if (password.length < 6) {
+                msgDiv.innerHTML = '<div class="error">A senha deve ter pelo menos 6 caracteres!</div>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Cadastrando...';
+
+            try {
+                // Salvar usuário no localStorage para validação
+                const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                
+                // Verificar se email já existe
+                if (users.find(u => u.email === email)) {
+                    msgDiv.innerHTML = '<div class="error">Este email já está cadastrado!</div>';
+                    btn.disabled = false;
+                    btn.textContent = 'Criar Conta';
+                    return;
+                }
+
+                users.push({ name, email, password });
+                localStorage.setItem('registeredUsers', JSON.stringify(users));
+
+                // Enviar para Google Sheets em background
+                fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'register', name, email, password })
+                }).catch(err => console.log('Erro ao registrar no servidor:', err));
+
+                msgDiv.innerHTML = '<div class="success">Conta criada com sucesso! Faça login.</div>';
+                setTimeout(() => {
+                    showLogin();
+                    msgDiv.innerHTML = '';
+                }, 2000);
+
+            } catch (error) {
+                msgDiv.innerHTML = '<div class="error">Erro ao cadastrar. Tente novamente.</div>';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Criar Conta';
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const msgDiv = document.getElementById('loginMessage');
+            const btn = document.getElementById('btnLogin');
+
+            if (!email || !password) {
+                msgDiv.innerHTML = '<div class="error">Por favor, preencha todos os campos!</div>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Entrando...';
+
+            try {
+                // Verificar se o usuário está registrado localmente
+                const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                const user = users.find(u => u.email === email && u.password === password);
+
+                if (!user) {
+                    msgDiv.innerHTML = '<div class="error">Email ou senha incorretos! Se não tem conta, crie uma.</div>';
+                    btn.disabled = false;
+                    btn.textContent = 'Entrar';
+                    return;
+                }
+
+                // Login bem-sucedido
+                currentUser = { name: user.name, email: user.email };
+                localStorage.setItem('user', JSON.stringify(currentUser));
+
+                // Tentar validar no servidor em background
+                fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'login', email, password })
+                }).catch(err => console.log('Erro ao validar no servidor:', err));
+
+                msgDiv.innerHTML = '<div class="success">Login realizado com sucesso!</div>';
+                
+                setTimeout(() => {
+                    showMainScreen();
+                    msgDiv.innerHTML = '';
+                }, 800);
+
+            } catch (error) {
+                msgDiv.innerHTML = '<div class="error">Erro ao fazer login. Tente novamente.</div>';
+                btn.disabled = false;
+                btn.textContent = 'Entrar';
+            }
+        }
+
+        function showMainScreen() {
+            // Validar se usuário está realmente logado
+            if (!currentUser || !currentUser.email) {
+                alert('Erro: Você precisa fazer login primeiro!');
+                logout();
+                return;
+            }
+
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('mainScreen').style.display = 'block';
+            document.getElementById('userAvatar').textContent = currentUser.name[0].toUpperCase();
+            loadSales();
+        }
+
+        function logout() {
+            if (confirm('Tem certeza que deseja sair?')) {
+                currentUser = null;
+                sales = [];
+                localStorage.removeItem('user');
+                document.getElementById('mainScreen').style.display = 'none';
+                document.getElementById('authScreen').style.display = 'flex';
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('loginMessage').innerHTML = '';
+            }
+        }
+
+        function calculateTotal() {
+            const quantity = parseFloat(document.getElementById('saleQuantity').value) || 0;
+            const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value) || 0;
+            const total = quantity * unitPrice;
+            document.getElementById('saleTotal').value = total.toFixed(2);
+        }
+
+        async function addSale() {
+            const date = document.getElementById('saleDate').value;
+            const product = document.getElementById('saleProduct').value;
+            const quantity = parseFloat(document.getElementById('saleQuantity').value);
+            const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value);
+            const total = parseFloat(document.getElementById('saleTotal').value);
+            const btn = document.getElementById('btnAddSale');
+
+            if (!date || !product || !quantity || !unitPrice) {
+                alert('Por favor, preencha todos os campos!');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Salvando...';
+
+            const sale = { 
+                id: editingId || Date.now(),
+                email: currentUser.email, 
+                date, 
+                product, 
+                quantity, 
+                unitPrice, 
+                total 
+            };
+
+            try {
+                // Adicionar ou atualizar localmente primeiro
+                if (editingId) {
+                    const index = sales.findIndex(s => s.id === editingId);
+                    if (index !== -1) {
+                        sales[index] = sale;
+                    }
+                    
+                    // Enviar para o Apps Script
+                    fetch(API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'updateSale', ...sale })
+                    }).catch(err => console.log('Erro ao atualizar no servidor:', err));
+                    
+                    editingId = null;
+                    document.getElementById('btnAddText').textContent = '➕ Adicionar Venda';
+                } else {
+                    // Adicionar localmente
+                    sales.push(sale);
+                    
+                    // Enviar para o Apps Script em background
+                    fetch(API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'saveSale', ...sale })
+                    }).catch(err => console.log('Erro ao salvar no servidor:', err));
+                }
+
+                // Salvar no localStorage como backup
+                localStorage.setItem(`sales_${currentUser.email}`, JSON.stringify(sales));
+
+                clearForm();
+                displaySales();
+
+            } catch (error) {
+                alert('Erro ao salvar venda. Tente novamente.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span id="btnAddText">➕ Adicionar Venda</span>';
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('saleDate').valueAsDate = new Date();
+            document.getElementById('saleProduct').value = '';
+            document.getElementById('saleQuantity').value = '1';
+            document.getElementById('saleUnitPrice').value = '';
+            document.getElementById('saleTotal').value = '';
+        }
+
+        async function loadSales() {
+            try {
+                // Tentar carregar do localStorage primeiro (funciona offline)
+                const savedSales = localStorage.getItem(`sales_${currentUser.email}`);
+                if (savedSales) {
+                    sales = JSON.parse(savedSales);
+                    displaySales();
+                }
+
+                // Tentar carregar do servidor em background
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'getSales', email: currentUser.email })
+                });
+
+                const data = await response.json();
+                if (data.success && data.sales) {
+                    sales = data.sales;
+                    localStorage.setItem(`sales_${currentUser.email}`, JSON.stringify(sales));
+                    displaySales();
+                }
+            } catch (error) {
+                console.log('Usando dados locais:', error);
+                // Se falhar, usa os dados do localStorage que já foram carregados
+                displaySales();
+            }
+        }
+
+        function displaySales() {
+            const container = document.getElementById('salesContainer');
             
-            <!-- Summary Cards -->
-            <div class="dashboard-summary">
-                <div class="summary-card total">
-                    <div class="summary-label">Faturamento Total</div>
-                    <div class="summary-value" id="totalRevenue">R$ 0,00</div>
+            if (sales.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 60px;">📊</div>
+                        <h3>Nenhuma venda registrada ainda</h3>
+                        <p>Adicione sua primeira venda usando o formulário acima</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = sales.map(sale => `
+                <div class="sale-card">
+                    <div class="sale-header">
+                        <div class="sale-date">📅 ${formatDate(sale.date)}</div>
+                        <div class="sale-actions">
+                            <button class="btn-small btn-edit" onclick="editSale(${sale.id})">✏️ Editar</button>
+                            <button class="btn-small btn-delete" onclick="deleteSale(${sale.id})">🗑️ Excluir</button>
+                        </div>
+                    </div>
+                    <div class="sale-details">
+                        <div class="sale-detail">
+                            <div class="sale-detail-label">Produto/Serviço</div>
+                            <div class="sale-detail-value">${sale.product}</div>
+                        </div>
+                        <div class="sale-detail">
+                            <div class="sale-detail-label">Quantidade</div>
+                            <div class="sale-detail-value">${sale.quantity}</div>
+                        </div>
+                        <div class="sale-detail">
+                            <div class="sale-detail-label">Valor Unitário</div>
+                            <div class="sale-detail-value">R$ ${sale.unitPrice.toFixed(2)}</div>
+                        </div>
+                        <div class="sale-detail">
+                            <div class="sale-detail-label">Total</div>
+                            <div class="sale-detail-value total-value">R$ ${sale.total.toFixed(2)}</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="summary-card count">
-                    <div class="summary-label">Total de Vendas</div>
-                    <div class="summary-value" id="totalSales">0</div>
-                </div>
-                <div class="summary-card avg">
-                    <div class="summary-label">Ticket Médio</div>
-                    <div class="summary-value" id="avgTicket">R$ 0,00</div>
-                </div>
-            </div>
+            `).join('');
+        }
 
-            <!-- Charts -->
-            <div class="chart-container">
-                <h3>📈 Vendas por Dia</h3>
-                <canvas id="dailyChart"></canvas>
-            </div>
+        function editSale(id) {
+            const sale = sales.find(s => s.id === id);
+            if (!sale) return;
 
-            <div class="chart-container">
-                <h3>🥧 Vendas por Produto/Serviço</h3>
-                <canvas id="productChart"></canvas>
-            </div>
+            document.getElementById('saleDate').value = sale.date;
+            document.getElementById('saleProduct').value = sale.product;
+            document.getElementById('saleQuantity').value = sale.quantity;
+            document.getElementById('saleUnitPrice').value = sale.unitPrice;
+            document.getElementById('saleTotal').value = sale.total.toFixed(2);
+            
+            editingId = id;
+            document.getElementById('btnAddText').textContent = '💾 Salvar Alterações';
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
-            <!-- Table -->
-            <div class="table-container">
-                <h3 style="color: #333; margin-bottom: 20px;">📋 Detalhamento das Vendas</h3>
-                <table class="sales-table">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Empreendimento</th>
-                            <th>Produto/Serviço</th>
-                            <th>Quantidade</th>
-                            <th>Valor Unit.</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dashboardTableBody">
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+        async function deleteSale(id) {
+            if (!confirm('Tem certeza que deseja excluir esta venda?')) return;
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <script src="script.js"></script>
+            try {
+                // Remover localmente
+                sales = sales.filter(s => s.id !== id);
+                localStorage.setItem(`sales_${currentUser.email}`, JSON.stringify(sales));
+                displaySales();
+
+                // Enviar para o servidor em background
+                fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'deleteSale', id })
+                }).catch(err => console.log('Erro ao deletar no servidor:', err));
+
+            } catch (error) {
+                alert('Erro ao excluir venda. Tente novamente.');
+            }
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            return date.toLocaleDateString('pt-BR', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+            });
+        }
+
+        async function submitReport() {
+            if (sales.length === 0) {
+                alert('Adicione pelo menos uma venda antes de enviar o relatório!');
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitReport');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Enviando relatório...';
+
+            const totalSales = sales.length;
+            const totalValue = sales.reduce((sum, sale) => sum + sale.total, 0);
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'submitReport', 
+                        email: currentUser.email,
+                        totalSales,
+                        totalValue 
+                    })
+                });
+
+                alert(`✅ Relatório enviado com sucesso!\n\nTotal de vendas: ${totalSales}\nValor total: R$ ${totalValue.toFixed(2)}\n\nOs dados foram salvos no Google Sheets.`);
+
+            } catch (error) {
+                alert('Erro ao enviar relatório. Tente novamente.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📤 Enviar Relatório de Vendas';
+            }
+        }
+
+        // Verificar se há usuário logado ao carregar a página
+        window.onload = function() {
+            const savedUser = localStorage.getItem('user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    
+                    // Verificar se o usuário está registrado
+                    const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                    const userExists = users.find(u => u.email === currentUser.email);
+                    
+                    if (!userExists) {
+                        // Usuário não está registrado, fazer logout
+                        localStorage.removeItem('user');
+                        currentUser = null;
+                        alert('Sessão inválida. Por favor, faça login novamente.');
+                        return;
+                    }
+                    
+                    // Carregar vendas do localStorage primeiro
+                    const savedSales = localStorage.getItem(`sales_${currentUser.email}`);
+                    if (savedSales) {
+                        sales = JSON.parse(savedSales);
+                    }
+                    
+                    showMainScreen();
+                } catch (error) {
+                    localStorage.removeItem('user');
+                    currentUser = null;
+                }
+            }
+        };
+    </script>
 </body>
 </html>
