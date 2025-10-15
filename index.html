@@ -528,20 +528,42 @@
                 return;
             }
 
+            if (password.length < 6) {
+                msgDiv.innerHTML = '<div class="error">A senha deve ter pelo menos 6 caracteres!</div>';
+                return;
+            }
+
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span> Cadastrando...';
 
             try {
-                const response = await fetch(API_URL, {
+                // Salvar usuário no localStorage para validação
+                const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                
+                // Verificar se email já existe
+                if (users.find(u => u.email === email)) {
+                    msgDiv.innerHTML = '<div class="error">Este email já está cadastrado!</div>';
+                    btn.disabled = false;
+                    btn.textContent = 'Criar Conta';
+                    return;
+                }
+
+                users.push({ name, email, password });
+                localStorage.setItem('registeredUsers', JSON.stringify(users));
+
+                // Enviar para Google Sheets em background
+                fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'register', name, email, password })
-                });
+                }).catch(err => console.log('Erro ao registrar no servidor:', err));
 
-                // Com no-cors não conseguimos ler a resposta, então assumimos sucesso
                 msgDiv.innerHTML = '<div class="success">Conta criada com sucesso! Faça login.</div>';
-                setTimeout(showLogin, 1500);
+                setTimeout(() => {
+                    showLogin();
+                    msgDiv.innerHTML = '';
+                }, 2000);
 
             } catch (error) {
                 msgDiv.innerHTML = '<div class="error">Erro ao cadastrar. Tente novamente.</div>';
@@ -566,26 +588,51 @@
             btn.innerHTML = '<span class="loading"></span> Entrando...';
 
             try {
-                const response = await fetch(API_URL, {
+                // Verificar se o usuário está registrado localmente
+                const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                const user = users.find(u => u.email === email && u.password === password);
+
+                if (!user) {
+                    msgDiv.innerHTML = '<div class="error">Email ou senha incorretos! Se não tem conta, crie uma.</div>';
+                    btn.disabled = false;
+                    btn.textContent = 'Entrar';
+                    return;
+                }
+
+                // Login bem-sucedido
+                currentUser = { name: user.name, email: user.email };
+                localStorage.setItem('user', JSON.stringify(currentUser));
+
+                // Tentar validar no servidor em background
+                fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'login', email, password })
-                });
+                }).catch(err => console.log('Erro ao validar no servidor:', err));
 
-                // Assumimos sucesso e salvamos no localStorage
-                currentUser = { name: email.split('@')[0], email };
-                localStorage.setItem('user', JSON.stringify(currentUser));
-                showMainScreen();
+                msgDiv.innerHTML = '<div class="success">Login realizado com sucesso!</div>';
+                
+                setTimeout(() => {
+                    showMainScreen();
+                    msgDiv.innerHTML = '';
+                }, 800);
 
             } catch (error) {
-                msgDiv.innerHTML = '<div class="error">Erro ao fazer login. Verifique seus dados.</div>';
+                msgDiv.innerHTML = '<div class="error">Erro ao fazer login. Tente novamente.</div>';
                 btn.disabled = false;
                 btn.textContent = 'Entrar';
             }
         }
 
         function showMainScreen() {
+            // Validar se usuário está realmente logado
+            if (!currentUser || !currentUser.email) {
+                alert('Erro: Você precisa fazer login primeiro!');
+                logout();
+                return;
+            }
+
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('mainScreen').style.display = 'block';
             document.getElementById('userAvatar').textContent = currentUser.name[0].toUpperCase();
@@ -593,13 +640,16 @@
         }
 
         function logout() {
-            currentUser = null;
-            sales = [];
-            localStorage.removeItem('user');
-            document.getElementById('mainScreen').style.display = 'none';
-            document.getElementById('authScreen').style.display = 'flex';
-            document.getElementById('loginEmail').value = '';
-            document.getElementById('loginPassword').value = '';
+            if (confirm('Tem certeza que deseja sair?')) {
+                currentUser = null;
+                sales = [];
+                localStorage.removeItem('user');
+                document.getElementById('mainScreen').style.display = 'none';
+                document.getElementById('authScreen').style.display = 'flex';
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('loginMessage').innerHTML = '';
+            }
         }
 
         function calculateTotal() {
@@ -849,15 +899,32 @@
         window.onload = function() {
             const savedUser = localStorage.getItem('user');
             if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                
-                // Carregar vendas do localStorage primeiro
-                const savedSales = localStorage.getItem(`sales_${currentUser.email}`);
-                if (savedSales) {
-                    sales = JSON.parse(savedSales);
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    
+                    // Verificar se o usuário está registrado
+                    const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                    const userExists = users.find(u => u.email === currentUser.email);
+                    
+                    if (!userExists) {
+                        // Usuário não está registrado, fazer logout
+                        localStorage.removeItem('user');
+                        currentUser = null;
+                        alert('Sessão inválida. Por favor, faça login novamente.');
+                        return;
+                    }
+                    
+                    // Carregar vendas do localStorage primeiro
+                    const savedSales = localStorage.getItem(`sales_${currentUser.email}`);
+                    if (savedSales) {
+                        sales = JSON.parse(savedSales);
+                    }
+                    
+                    showMainScreen();
+                } catch (error) {
+                    localStorage.removeItem('user');
+                    currentUser = null;
                 }
-                
-                showMainScreen();
             }
         };
     </script>
