@@ -979,7 +979,8 @@
             }
 
             btn.disabled = true;
-            btn.innerHTML = '<span class="loading"></span> Salvando...';
+            // <--- CORREÇÃO: Altera o innerHTML do botão para mostrar o loading, o que remove o span #btnAddText
+            btn.innerHTML = '<span class="loading"></span> Salvando...'; 
 
             const sale = { 
                 id: editingId || Date.now(),
@@ -1007,8 +1008,7 @@
                         body: JSON.stringify({ action: 'updateSale', ...sale })
                     }).catch(err => console.log('Erro ao atualizar no servidor:', err));
                     
-                    editingId = null;
-                    document.getElementById('btnAddText').textContent = '➕ Adicionar Venda';
+                    editingId = null; // Resetamos o estado de edição após o sucesso
                 } else {
                     // Adicionar localmente
                     sales.push(sale);
@@ -1037,7 +1037,11 @@
                 console.error('Erro ao salvar venda. Tente novamente.', error);
             } finally {
                 btn.disabled = false;
-                document.getElementById('btnAddText').textContent = editingId ? '💾 Salvar Alterações' : '➕ Adicionar Venda';
+                // <--- CORREÇÃO: Restaura a estrutura HTML original do botão
+                // Se editingId for null (sucesso ou nova adição), o texto será 'Adicionar Venda'.
+                // Se editingId não for null (erro durante uma edição), o texto será 'Salvar Alterações'.
+                const finalText = editingId ? '💾 Salvar Alterações' : '➕ Adicionar Venda';
+                btn.innerHTML = `<span id="btnAddText">${finalText}</span>`; 
             }
         }
 
