@@ -126,13 +126,13 @@
 
         .main-screen {
             display: none;
-            flex-direction: column; /* Garantir que o conteúdo principal seja empilhado */
+            flex-direction: column;
         }
         
         .report-screen {
             display: none;
-            flex-direction: column; /* Definir como coluna para layout de dashboard */
-            max-width: 1400px; /* Aumentar um pouco para o dashboard */
+            flex-direction: column;
+            max-width: 1400px;
         }
         
         /* HEADER E AVATAR DROPDOWN */
@@ -183,7 +183,7 @@
 
         .dropdown-menu {
             position: absolute;
-            top: 60px; /* Abaixo do avatar */
+            top: 60px;
             right: 0;
             background: white;
             border-radius: 8px;
@@ -264,7 +264,6 @@
             margin-bottom: 20px;
         }
         
-        /* VENDAS LISTA (RESTANTE DO CÓDIGO DA TELA PRINCIPAL) - OMITIDO POR SER SIMILAR */
         .sales-list h2 {
             color: #333;
             margin-bottom: 20px;
@@ -535,7 +534,7 @@
 
             .header {
                 padding: 15px 20px;
-                flex-direction: row; /* Manter linha, mas ajustar espaçamento */
+                flex-direction: row;
                 gap: 10px;
             }
             
@@ -603,12 +602,10 @@
                     <label>Nome Completo</label>
                     <input type="text" id="registerName" placeholder="Seu nome">
                 </div>
-                 <!-- NOVO CAMPO ADICIONADO AQUI -->
                 <div class="form-group">
                     <label>Nome do Empreendimento</label>
                     <input type="text" id="registerVenture" placeholder="Ex: Minha Loja Digital">
                 </div>
-                 <!-- FIM NOVO CAMPO -->
                 <div class="form-group">
                     <label>Email</label>
                     <input type="email" id="registerEmail" placeholder="seu@email.com">
@@ -629,10 +626,8 @@
     <!-- TELA PRINCIPAL: REGISTRO DE VENDAS -->
     <div id="mainScreen" class="container main-screen">
         <div class="header">
-            <!-- Título atualizado para exibir o nome do empreendimento -->
             <h1 id="mainTitle">✍️ Minhas Vendas</h1>
             <div class="user-info">
-                <!-- Dropdown do Avatar para acessar o Relatório e Sair -->
                 <div class="avatar-dropdown" id="mainAvatarDropdown">
                     <div class="avatar" id="userAvatar">U</div>
                     <div class="dropdown-menu">
@@ -776,13 +771,12 @@
 
         async function register() {
             const name = document.getElementById('registerName').value;
-            const ventureName = document.getElementById('registerVenture').value; // NOVO CAMPO
+            const ventureName = document.getElementById('registerVenture').value;
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
             const msgDiv = document.getElementById('registerMessage');
             const btn = document.getElementById('btnRegister');
 
-            // Validação atualizada
             if (!name || !ventureName || !email || !password) {
                 msgDiv.innerHTML = '<div class="error">Por favor, preencha todos os campos!</div>';
                 return;
@@ -797,10 +791,8 @@
             btn.innerHTML = '<span class="loading"></span> Cadastrando...';
 
             try {
-                // Salvar usuário no localStorage para validação
                 const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
                 
-                // Verificar se email já existe
                 if (users.find(u => u.email === email)) {
                     msgDiv.innerHTML = '<div class="error">Este email já está cadastrado!</div>';
                     btn.disabled = false;
@@ -808,11 +800,9 @@
                     return;
                 }
 
-                // Salva o nome do empreendimento
                 users.push({ name, ventureName, email, password }); 
                 localStorage.setItem('registeredUsers', JSON.stringify(users));
 
-                // Enviar para Google Sheets em background
                 fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -849,7 +839,6 @@
             btn.innerHTML = '<span class="loading"></span> Entrando...';
 
             try {
-                // Verificar se o usuário está registrado localmente
                 const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
                 const user = users.find(u => u.email === email && u.password === password);
 
@@ -860,11 +849,14 @@
                     return;
                 }
 
-                // Login bem-sucedido: inclui ventureName
-                currentUser = { name: user.name, ventureName: user.ventureName || 'Minhas Vendas', email: user.email };
+                // Login bem-sucedido: inclui ventureName (garantindo que sempre exista)
+                currentUser = { 
+                    name: user.name, 
+                    ventureName: user.ventureName || user.name + ' - Vendas', 
+                    email: user.email 
+                };
                 localStorage.setItem('user', JSON.stringify(currentUser));
 
-                // Tentar validar no servidor em background
                 fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -886,11 +878,8 @@
             }
         }
         
-        /* Função adaptada para alternar entre mainScreen e reportScreen */
         function showMainScreen() {
-            // Validar se usuário está realmente logado
             if (!currentUser || !currentUser.email) {
-                // Substituído alert por console.error
                 console.error('Erro: Você precisa fazer login primeiro!');
                 logout();
                 return;
@@ -900,26 +889,20 @@
             document.getElementById('mainScreen').style.display = 'flex';
             document.getElementById('reportScreen').style.display = 'none'; 
             
-            // Configurar TÍTULOS e avatares
             const avatarLetter = currentUser.name[0].toUpperCase();
             const ventureName = currentUser.ventureName || 'Minhas Vendas';
             
             document.getElementById('userAvatar').textContent = avatarLetter;
             document.getElementById('reportAvatar').textContent = avatarLetter;
             
-            // Atualiza os títulos da tela principal e relatório
             document.getElementById('mainTitle').innerHTML = `✍️ ${ventureName}`;
             document.getElementById('reportTitle').innerHTML = `📈 Relatório de Vendas: ${ventureName}`;
-
 
             loadSales();
         }
         
-        /* Nova função para mostrar a tela de relatório */
         function showReportScreen() {
-            // Verificar se há dados
             if (sales.length === 0) {
-                // Substituído alert por uma notificação mais suave (usando o JS confirm)
                 if (confirm('Você precisa registrar pelo menos uma venda para gerar o relatório! Quer registrar uma agora?')) {
                     showMainScreen();
                 }
@@ -929,13 +912,10 @@
             document.getElementById('mainScreen').style.display = 'none';
             document.getElementById('reportScreen').style.display = 'flex'; 
             
-            // Renderizar o conteúdo do relatório
             renderReport();
         }
 
-
         function logout() {
-            // Usando confirm no lugar de alert, pois é uma ação destrutiva
             if (confirm('Tem certeza que deseja sair?')) {
                 currentUser = null;
                 sales = [];
@@ -949,13 +929,10 @@
             }
         }
         
-        /* Função para alternar o dropdown do avatar */
         function toggleAvatarDropdown(dropdownId) {
             const dropdown = document.getElementById(dropdownId);
-            // Alternar o estado do dropdown clicado
             dropdown.classList.toggle('active');
         }
-
 
         function calculateTotal() {
             const quantity = parseFloat(document.getElementById('saleQuantity').value) || 0;
@@ -973,13 +950,11 @@
             const btn = document.getElementById('btnAddSale');
 
             if (!date || !product || !quantity || !unitPrice) {
-                // Substituído alert
                 console.error('Por favor, preencha todos os campos!');
                 return;
             }
 
             btn.disabled = true;
-            // <--- CORREÇÃO: Altera o innerHTML do botão para mostrar o loading, o que remove o span #btnAddText
             btn.innerHTML = '<span class="loading"></span> Salvando...'; 
 
             const sale = { 
@@ -993,14 +968,12 @@
             };
 
             try {
-                // Adicionar ou atualizar localmente primeiro
                 if (editingId) {
                     const index = sales.findIndex(s => s.id === editingId);
                     if (index !== -1) {
                         sales[index] = sale;
                     }
                     
-                    // Enviar para o Apps Script
                     fetch(API_URL, {
                         method: 'POST',
                         mode: 'no-cors',
@@ -1008,12 +981,10 @@
                         body: JSON.stringify({ action: 'updateSale', ...sale })
                     }).catch(err => console.log('Erro ao atualizar no servidor:', err));
                     
-                    editingId = null; // Resetamos o estado de edição após o sucesso
+                    editingId = null;
                 } else {
-                    // Adicionar localmente
                     sales.push(sale);
                     
-                    // Enviar para o Apps Script em background
                     fetch(API_URL, {
                         method: 'POST',
                         mode: 'no-cors',
@@ -1022,24 +993,18 @@
                     }).catch(err => console.log('Erro ao salvar no servidor:', err));
                 }
 
-                // Salvar no localStorage como backup
                 localStorage.setItem(`sales_${currentUser.email}`, JSON.stringify(sales));
 
                 clearForm();
                 displaySales();
-                // Se a tela de relatório estiver ativa, renderize-a também
                 if (document.getElementById('reportScreen').style.display !== 'none') {
                      renderReport();
                 }
 
             } catch (error) {
-                // Substituído alert
                 console.error('Erro ao salvar venda. Tente novamente.', error);
             } finally {
                 btn.disabled = false;
-                // <--- CORREÇÃO: Restaura a estrutura HTML original do botão
-                // Se editingId for null (sucesso ou nova adição), o texto será 'Adicionar Venda'.
-                // Se editingId não for null (erro durante uma edição), o texto será 'Salvar Alterações'.
                 const finalText = editingId ? '💾 Salvar Alterações' : '➕ Adicionar Venda';
                 btn.innerHTML = `<span id="btnAddText">${finalText}</span>`; 
             }
@@ -1055,14 +1020,12 @@
 
         async function loadSales() {
             try {
-                // Tentar carregar do localStorage primeiro (funciona offline)
                 const savedSales = localStorage.getItem(`sales_${currentUser.email}`);
                 if (savedSales) {
                     sales = JSON.parse(savedSales);
                     displaySales();
                 }
 
-                // Tentar carregar do servidor em background
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1077,7 +1040,6 @@
                 }
             } catch (error) {
                 console.log('Usando dados locais:', error);
-                // Se falhar, usa os dados do localStorage que já foram carregados
                 displaySales();
             }
         }
@@ -1147,17 +1109,14 @@
             if (!confirm('Tem certeza que deseja excluir esta venda?')) return;
 
             try {
-                // Remover localmente
                 sales = sales.filter(s => s.id !== id);
                 localStorage.setItem(`sales_${currentUser.email}`, JSON.stringify(sales));
                 displaySales();
                 
-                // Se a tela de relatório estiver ativa, renderize-a também
                 if (document.getElementById('reportScreen').style.display !== 'none') {
                      renderReport();
                 }
 
-                // Enviar para o servidor em background
                 fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -1166,7 +1125,6 @@
                 }).catch(err => console.log('Erro ao deletar no servidor:', err));
 
             } catch (error) {
-                // Substituído alert
                 console.error('Erro ao excluir venda. Tente novamente.', error);
             }
         }
@@ -1182,7 +1140,6 @@
 
         async function submitReport() {
             if (sales.length === 0) {
-                // Substituído alert
                 if (confirm('Adicione pelo menos uma venda antes de enviar o relatório! Quer adicionar agora?')) {
                     return;
                 }
@@ -1196,7 +1153,6 @@
             const totalValue = sales.reduce((sum, sale) => sum + sale.total, 0);
 
             try {
-                // Nota: O modo 'no-cors' não permite ler a resposta, mas garante o envio para o Google Apps Script
                 await fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -1209,13 +1165,10 @@
                     })
                 });
 
-                // Substituído alert
                 if (confirm(`✅ Relatório enviado com sucesso!\n\nTotal de vendas: ${totalSales}\nValor total: R$ ${totalValue.toFixed(2)}\n\n(Os dados foram salvos no Google Sheets. OK para continuar)`)) {
-                    // Sem ação, apenas confirmação
                 }
 
             } catch (error) {
-                // Substituído alert
                 console.error('Erro ao enviar relatório. Tente novamente.', error);
             } finally {
                 btn.disabled = false;
@@ -1223,17 +1176,13 @@
             }
         }
         
-        /* Nova função para renderizar o relatório (Cálculos, Gráficos e Tabela) */
         function renderReport() {
-            // 1. Verificar Dados
             const summaryCards = document.getElementById('summaryCards');
             const tableBody = document.getElementById('salesTableBody');
             const reportEmptyState = document.getElementById('reportEmptyState');
 
-            // Limpa gráficos anteriores se existirem
             if (productChartInstance) productChartInstance.destroy();
             if (monthlyChartInstance) monthlyChartInstance.destroy();
-
 
             if (sales.length === 0) {
                 summaryCards.innerHTML = '';
@@ -1244,13 +1193,11 @@
 
             reportEmptyState.classList.add('hidden');
 
-            // 2. Cálculos das Métricas
             const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
             const totalQuantity = sales.reduce((sum, sale) => sum + sale.quantity, 0);
             const uniqueTransactions = sales.length;
             const avgPrice = uniqueTransactions > 0 ? totalRevenue / uniqueTransactions : 0;
 
-            // 3. Renderizar Cartões de Resumo
             summaryCards.innerHTML = `
                 <div class="card total-revenue">
                     <div class="card-title">Receita Total</div>
@@ -1270,20 +1217,17 @@
                 </div>
             `;
 
-            // 4. Agrupar Dados para Gráficos
             const salesByProduct = sales.reduce((acc, sale) => {
                 acc[sale.product] = (acc[sale.product] || 0) + sale.total;
                 return acc;
             }, {});
 
             const salesByMonth = sales.reduce((acc, sale) => {
-                // Formato AAAA-MM
                 const monthYear = sale.date.substring(0, 7);
                 acc[monthYear] = (acc[monthYear] || 0) + sale.total;
                 return acc;
             }, {});
             
-            // Formatar meses para exibição e ordenar
             const monthLabels = Object.keys(salesByMonth)
                 .sort()
                 .map(my => {
@@ -1292,10 +1236,6 @@
                 });
             const monthlyData = Object.keys(salesByMonth).sort().map(key => salesByMonth[key]);
 
-
-            // 5. Renderizar Gráficos (Chart.js)
-            
-            // Gráfico de Barras - Vendas por Produto
             productChartInstance = new Chart(document.getElementById('productChart'), {
                 type: 'bar',
                 data: {
@@ -1324,7 +1264,6 @@
                 }
             });
 
-            // Gráfico de Linha - Vendas Mensais
             monthlyChartInstance = new Chart(document.getElementById('monthlyChart'), {
                 type: 'line',
                 data: {
@@ -1356,9 +1295,7 @@
                 }
             });
 
-
-            // 6. Renderizar Tabela de Detalhes
-            tableBody.innerHTML = sales.sort((a, b) => new Date(b.date) - new Date(a.date)) // Ordenar por data
+            tableBody.innerHTML = sales.sort((a, b) => new Date(b.date) - new Date(a.date))
                 .map(sale => `
                     <tr>
                         <td>${formatDate(sale.date)}</td>
@@ -1368,20 +1305,17 @@
                         <td><span class="total-value">R$ ${sale.total.toFixed(2).replace('.', ',')}</span></td>
                     </tr>
                 `).join('');
-
         }
 
-        // Verificar se há usuário logado ao carregar a página
         window.onload = function() {
             const savedUser = localStorage.getItem('user');
             if (savedUser) {
                 try {
                     currentUser = JSON.parse(savedUser);
                     
-                    // Verificar se o usuário está registrado
+                    // Verificar se o usuário está registrado (verificação simplificada - apenas email)
                     const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-                    // Adicionei uma verificação de usuário mais robusta
-                    const userExists = users.find(u => u.email === currentUser.email && u.name === currentUser.name && u.ventureName === currentUser.ventureName);
+                    const userExists = users.find(u => u.email === currentUser.email);
                     
                     if (!userExists) {
                         // Usuário não está registrado, fazer logout
@@ -1391,7 +1325,14 @@
                         return;
                     }
                     
-                    // Carregar vendas do localStorage primeiro
+                    // Atualizar dados do usuário com informações mais recentes do registro
+                    currentUser = {
+                        name: userExists.name,
+                        ventureName: userExists.ventureName || userExists.name + ' - Vendas',
+                        email: userExists.email
+                    };
+                    localStorage.setItem('user', JSON.stringify(currentUser));
+                    
                     const savedSales = localStorage.getItem(`sales_${currentUser.email}`);
                     if (savedSales) {
                         sales = JSON.parse(savedSales);
@@ -1405,17 +1346,14 @@
             }
         };
         
-        // Inicializar os event listeners do dropdown no carregamento do DOM
         document.addEventListener('DOMContentLoaded', () => {
-            // Adicionar listener ao clicar no avatar para toggle do dropdown
             document.querySelectorAll('.avatar-dropdown').forEach(dropdown => {
                 dropdown.querySelector('.avatar').onclick = (event) => {
-                    event.stopPropagation(); // Previne que o clique feche imediatamente
+                    event.stopPropagation();
                     toggleAvatarDropdown(dropdown.id);
                 };
             });
             
-            // Fechar o dropdown ao clicar em qualquer lugar da tela
             document.addEventListener('click', function(event) {
                 document.querySelectorAll('.avatar-dropdown').forEach(dropdown => {
                     if (dropdown.classList.contains('active') && !dropdown.contains(event.target)) {
