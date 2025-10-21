@@ -915,7 +915,7 @@
             renderReport();
         }
 
-        function logout() {
+       function logout() {
             if (confirm('Tem certeza que deseja sair?')) {
                 currentUser = null;
                 sales = [];
@@ -923,9 +923,31 @@
                 document.getElementById('mainScreen').style.display = 'none';
                 document.getElementById('reportScreen').style.display = 'none'; 
                 document.getElementById('authScreen').style.display = 'flex';
+                
+                // Resetar formulário de login
                 document.getElementById('loginEmail').value = '';
                 document.getElementById('loginPassword').value = '';
                 document.getElementById('loginMessage').innerHTML = '';
+                
+                // Resetar botão de login
+                const btnLogin = document.getElementById('btnLogin');
+                btnLogin.disabled = false;
+                btnLogin.textContent = 'Entrar';
+                
+                // Resetar formulário de registro
+                document.getElementById('registerName').value = '';
+                document.getElementById('registerVenture').value = '';
+                document.getElementById('registerEmail').value = '';
+                document.getElementById('registerPassword').value = '';
+                document.getElementById('registerMessage').innerHTML = '';
+                
+                // Resetar botão de registro
+                const btnRegister = document.getElementById('btnRegister');
+                btnRegister.disabled = false;
+                btnRegister.textContent = 'Criar Conta';
+                
+                // Garantir que está na tela de login
+                showLogin();
             }
         }
         
