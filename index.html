@@ -7,7 +7,6 @@
     <!-- Incluindo Chart.js para os gráficos do dashboard -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script> 
     <style>
-        /* Estilos Base e Responsivos */
         * {
             margin: 0;
             padding: 0;
@@ -33,156 +32,170 @@
             overflow: hidden;
         }
 
-        /* Telas de Autenticação e Principal */
-        .auth-screen, .main-screen {
-            display: none; /* Inicialmente ambos ocultos, o JS decide qual mostrar */
-            min-height: 80vh;
-        }
-
         .auth-screen {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 40px;
-        }
-
-        .login-card {
-            background: #ffffff;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 400px;
+            padding: 60px 40px;
             text-align: center;
         }
 
-        .login-card h2 {
-            margin-bottom: 25px;
-            color: #333;
-            font-size: 1.8em;
-            font-weight: 600;
+        .auth-screen h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
         }
 
-        .input-group {
+        .auth-screen p {
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .form-group {
             margin-bottom: 20px;
             text-align: left;
         }
 
-        .input-group label {
+        .form-group label {
             display: block;
             margin-bottom: 8px;
+            color: #333;
             font-weight: 500;
-            color: #555;
+            font-size: 1.1em;
         }
 
-        .input-group input {
+        .form-group input {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
             transition: border-color 0.3s;
         }
 
-        .input-group input:focus {
+        .form-group input:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
 
-        #loginButton {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            color: white;
+        .btn {
+            padding: 15px 40px;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: opacity 0.3s, transform 0.1s;
+            border-radius: 10px;
+            font-size: 1.1em;
             font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
         }
 
-        #loginButton:hover:not(:disabled) {
-            opacity: 0.9;
-        }
-
-        #loginButton:active:not(:disabled) {
-            transform: scale(0.99);
-        }
-
-        #loginButton:disabled {
-            background: #ccc;
+        .btn:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
         }
 
-        #loginError {
-            color: #e74c3c;
-            margin-top: 15px;
-            font-size: 0.9em;
-            height: 1.2em; /* Para evitar CLS */
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
 
-        /* Estilos da Tela Principal (Dashboard) */
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #f5f5f5;
+        }
+
+        .switch-auth {
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .switch-auth a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
         .main-screen {
-            display: flex;
+            display: none;
             flex-direction: column;
-            padding: 0;
-            height: 100%;
         }
+        
+        .report-screen {
+            display: none;
+            flex-direction: column;
+            max-width: 1400px;
+        }
+        
+        /* HEADER E AVATAR DROPDOWN */
 
-        /* Header e Dropdown do Avatar */
         .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 30px;
-            border-bottom: 1px solid #eee;
-            background: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            z-index: 10;
+            color: white;
         }
 
         .header h1 {
-            color: #444;
+            font-size: 1.8em;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: white;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 1.5em;
+            font-weight: bold;
+            transition: transform 0.2s;
         }
 
         .avatar-dropdown {
             position: relative;
-        }
-
-        .avatar {
-            width: 40px;
-            height: 40px;
-            background-color: #667eea;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: 600;
             cursor: pointer;
-            transition: box-shadow 0.3s;
+            z-index: 10;
         }
-
-        .avatar:hover {
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+        
+        .avatar-dropdown.active .avatar {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
         }
 
         .dropdown-menu {
             position: absolute;
-            top: 50px;
+            top: 60px;
             right: 0;
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            width: 200px;
+            border-radius: 8px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            min-width: 200px;
             opacity: 0;
             visibility: hidden;
             transform: translateY(-10px);
-            transition: all 0.3s ease;
-            padding: 10px 0;
+            transition: opacity 0.3s, transform 0.3s;
+            display: flex;
+            flex-direction: column;
+            padding: 5px 0;
         }
 
         .avatar-dropdown.active .dropdown-menu {
@@ -191,664 +204,1162 @@
             transform: translateY(0);
         }
 
-        .dropdown-item {
-            padding: 10px 20px;
-            font-size: 0.95em;
-            color: #555;
+        .dropdown-menu button {
+            background: none;
+            border: none;
+            padding: 12px 20px;
+            text-align: left;
             cursor: pointer;
+            font-size: 1em;
+            color: #333;
             transition: background-color 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            white-space: nowrap;
+            width: 100%;
         }
 
-        .dropdown-item:hover {
+        .dropdown-menu button:hover {
             background-color: #f5f5f5;
+            color: #667eea;
+        }
+        
+        .btn-secondary-light {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
         }
 
-        /* Content Sections */
+        .btn-secondary-light:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        /* CONTEÚDO PRINCIPAL (MAIN SCREEN) */
+        
         .content {
-            flex-grow: 1;
+            padding: 40px;
+        }
+
+        .sale-form {
+            background: #f8f9fa;
             padding: 30px;
-            overflow-y: auto;
-            display: flex;
-            gap: 30px;
-        }
-
-        .sidebar {
-            width: 300px;
-            background: #f9f9f9;
-            padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            flex-shrink: 0;
+            margin-bottom: 30px;
         }
 
-        .dashboard-body {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
-
-        /* Widgets and Cards */
-        .widget-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        .widget {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            border-left: 5px solid #667eea;
-            transition: transform 0.3s;
-        }
-
-        .widget:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
-        }
-
-        .widget h4 {
-            color: #764ba2;
-            font-size: 0.9em;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-        }
-
-        .widget p {
-            font-size: 1.8em;
-            font-weight: 700;
+        .sale-form h2 {
             color: #333;
-        }
-
-        .chart-card {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        }
-
-        .chart-card h3 {
-            margin-bottom: 15px;
-            color: #444;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-        }
-
-        /* Formulário de Vendas */
-        .form-card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-
-        .form-card h3 {
-            color: #333;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
+            margin-bottom: 25px;
+            font-size: 1.5em;
         }
 
         .form-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .sales-list h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .sale-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .sale-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .sale-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 15px;
         }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #555;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-        }
-
-        #submitSalesBtn {
-            padding: 10px 20px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: opacity 0.3s;
+        .sale-date {
             font-weight: 600;
-            margin-top: 10px;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .sale-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #2980b9;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+        }
+
+        .sale-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .sale-detail {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .sale-detail-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .sale-detail-value {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .total-value {
+            color: #27ae60;
+            font-size: 1.3em;
+        }
+
+        .btn-submit-report {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            padding: 20px;
             width: 100%;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.3s;
         }
 
-        #submitSalesBtn:hover:not(:disabled) {
-            opacity: 0.9;
+        .btn-submit-report:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(39, 174, 96, 0.4);
         }
 
-        #submitSalesBtn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.5;
         }
         
-        #salesMessage {
-            margin-top: 15px;
-            font-size: 0.9em;
+        /* DASHBOARD ESPECÍFICO */
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
             text-align: center;
-            min-height: 1.2em;
+            border-left: 5px solid;
         }
 
-        /* Tabela de Vendas */
-        .sales-table-container {
+        .card-title {
+            font-size: 1em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .card-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .card.total-revenue { border-left-color: #27ae60; }
+        .card.total-sales { border-left-color: #667eea; }
+        .card.avg-price { border-left-color: #f39c12; }
+
+        .chart-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-box {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-box h2 {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+        
+        .data-table-container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
             overflow-x: auto;
-            margin-top: 20px;
         }
 
-        .sales-table {
+        .data-table-container h2 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        #salesTable {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 10px;
         }
 
-        .sales-table th, .sales-table td {
+        #salesTable th, #salesTable td {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #eee;
         }
 
-        .sales-table th {
-            background-color: #f5f5f5;
-            color: #333;
+        #salesTable th {
+            background-color: #f4f4f8;
+            color: #667eea;
             font-weight: 600;
             text-transform: uppercase;
-            font-size: 0.85em;
-        }
-
-        .sales-table tr:hover {
-            background-color: #fafafa;
-        }
-
-        .sales-table td {
             font-size: 0.9em;
-            color: #555;
         }
 
-        /* Responsividade */
-        @media (max-width: 900px) {
+        #salesTable tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        /* UTILITÁRIOS E FEEDBACK */
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .show {
+            display: block;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #fcc;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #cfc;
+        }
+
+        @media (max-width: 768px) {
+            .auth-screen {
+                padding: 40px 20px;
+            }
+
+            .header {
+                padding: 15px 20px;
+                flex-direction: row;
+                gap: 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.3em;
+            }
+            
+            .user-info {
+                gap: 5px;
+            }
+
             .content {
-                flex-direction: column;
+                padding: 20px;
             }
-            .sidebar {
-                width: 100%;
-            }
+
             .form-row {
                 grid-template-columns: 1fr;
+            }
+
+            .sale-details {
+                grid-template-columns: 1fr;
+            }
+
+            .sale-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Tela de Autenticação -->
-        <div id="authScreen" class="auth-screen">
-            <div class="login-card">
-                <h2>Relatório de Vendas</h2>
-                <div class="input-group">
-                    <label for="email">E-mail</label>
-                    <input type="email" id="email" placeholder="seu@email.com" required>
+    <div id="authScreen" class="container">
+        <div class="auth-screen">
+            <h1>📊 Relatório de Vendas</h1>
+            <p>Gerencie suas vendas de forma simples e prática</p>
+            
+            <div id="loginForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" placeholder="seu@email.com">
                 </div>
-                <div class="input-group">
-                    <label for="password">Senha</label>
-                    <input type="password" id="password" placeholder="••••••••" required>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="loginPassword" placeholder="Sua senha">
                 </div>
-                <button id="loginButton" onclick="login()">Entrar</button>
-                <p id="loginError"></p>
-                <small style="display: block; margin-top: 15px; color: #777;">* Credenciais válidas: `admin@vendas.com` / `123456`</small>
+                <button class="btn btn-primary" onclick="login()" id="btnLogin">Entrar</button>
+                <div class="switch-auth">
+                    Não tem conta? <a onclick="showRegister()">Criar conta</a>
+                </div>
+                <div id="loginMessage"></div>
+            </div>
+
+            <div id="registerForm" class="hidden">
+                <div class="form-group">
+                    <label>Nome Completo</label>
+                    <input type="text" id="registerName" placeholder="Seu nome">
+                </div>
+                <div class="form-group">
+                    <label>Nome do Empreendimento</label>
+                    <input type="text" id="registerVenture" placeholder="Ex: Minha Loja Digital">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="registerEmail" placeholder="seu@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="registerPassword" placeholder="Crie uma senha">
+                </div>
+                <button class="btn btn-primary" onclick="register()" id="btnRegister">Criar Conta</button>
+                <div class="switch-auth">
+                    Já tem conta? <a onclick="showLogin()">Fazer login</a>
+                </div>
+                <div id="registerMessage"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA PRINCIPAL: REGISTRO DE VENDAS -->
+    <div id="mainScreen" class="container main-screen">
+        <div class="header">
+            <h1 id="mainTitle">✍️ Minhas Vendas</h1>
+            <div class="user-info">
+                <div class="avatar-dropdown" id="mainAvatarDropdown">
+                    <div class="avatar" id="userAvatar">U</div>
+                    <div class="dropdown-menu">
+                        <button onclick="showReportScreen()">Ver Relatório de Vendas</button>
+                        <button onclick="logout()">Sair</button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Tela Principal (Dashboard e Formulário) -->
-        <div id="mainScreen" class="main-screen">
-            <div class="header">
-                <h1 id="ventureNameDisplay">...</h1>
-                
-                <div id="avatarDropdown" class="avatar-dropdown">
-                    <div id="userAvatar" class="avatar">U</div>
+        <div class="content">
+            <div class="sale-form">
+                <h2>➕ Adicionar Nova Venda</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Data</label>
+                        <input type="date" id="saleDate">
+                    </div>
+                    <div class="form-group">
+                        <label>Produto/Serviço</label>
+                        <input type="text" id="saleProduct" placeholder="Ex: Consultoria">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Quantidade</label>
+                        <input type="number" id="saleQuantity" min="1" value="1" oninput="calculateTotal()">
+                    </div>
+                    <div class="form-group">
+                        <label>Valor Unitário (R$)</label>
+                        <input type="number" id="saleUnitPrice" min="0" step="0.01" placeholder="0.00" oninput="calculateTotal()">
+                    </div>
+                    <div class="form-group">
+                        <label>Total (R$)</label>
+                        <input type="text" id="saleTotal" readonly style="background: #e8f5e9; font-weight: 600; color: #27ae60;">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="addSale()" id="btnAddSale">
+                    <span id="btnAddText">➕ Adicionar Venda</span>
+                </button>
+            </div>
+
+            <div class="sales-list">
+                <h2>📋 Lista de Vendas</h2>
+                <div id="salesContainer"></div>
+            </div>
+
+            <button class="btn-submit-report" onclick="submitReport()" id="btnSubmitReport">
+                📤 Enviar Relatório de Vendas
+            </button>
+        </div>
+    </div>
+    
+    <!-- TELA DE RELATÓRIO/DASHBOARD -->
+    <div id="reportScreen" class="container report-screen">
+        <div class="header">
+            <h1 id="reportTitle">📈 Relatório de Vendas</h1>
+            <div class="user-info">
+                <button class="btn-secondary-light" onclick="showMainScreen()">← Voltar para Vendas</button>
+
+                <div class="avatar-dropdown" id="reportAvatarDropdown">
+                    <div class="avatar" id="reportAvatar">U</div>
                     <div class="dropdown-menu">
-                        <div id="userNameDisplay" class="dropdown-item" style="pointer-events: none;">Usuário</div>
-                        <div class="dropdown-item" onclick="logout()">
-                            <!-- Icone SVG de Sair/Logout (lucide-react: log-out) -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-                            Sair
-                        </div>
+                        <button onclick="logout()">Sair</button>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="content">
-                <!-- Sidebar: Formulário de Nova Venda -->
-                <div class="sidebar">
-                    <div class="form-card">
-                        <h3>Registrar Nova Venda</h3>
-                        <form id="salesForm">
-                            <div class="form-group">
-                                <label for="product">Produto</label>
-                                <select id="product" required>
-                                    <option value="">Selecione um Produto</option>
-                                    <option value="Serviço A">Serviço A</option>
-                                    <option value="Produto B">Produto B</option>
-                                    <option value="Consultoria C">Consultoria C</option>
-                                </select>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="value">Valor (R$)</label>
-                                    <input type="number" id="value" min="0.01" step="0.01" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="date">Data da Venda</label>
-                                    <input type="date" id="date" required>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="client">Cliente</label>
-                                <input type="text" id="client" placeholder="Nome do Cliente" required>
-                            </div>
-                            
-                            <button type="submit" id="submitSalesBtn">Registrar Venda</button>
-                            <p id="salesMessage"></p>
-                        </form>
-                    </div>
+        <div class="content">
+            <!-- Cartões de Resumo (Métricas) -->
+            <div class="summary-cards" id="summaryCards">
+                <!-- Data inserida via JS -->
+            </div>
 
-                    <!-- Tabela de Vendas Recentes -->
-                    <div class="form-card" style="margin-top: 20px;">
-                        <h3>Vendas Recentes</h3>
-                        <div class="sales-table-container">
-                            <table class="sales-table">
-                                <thead>
-                                    <tr>
-                                        <th>Produto</th>
-                                        <th>Valor</th>
-                                        <th>Data</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="salesTableBody">
-                                    <tr><td colspan="3" style="text-align: center;">Nenhuma venda registrada.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+            <!-- Gráficos -->
+            <div class="chart-container">
+                <div class="chart-box">
+                    <h2>Vendas por Produto (R$)</h2>
+                    <canvas id="productChart"></canvas>
                 </div>
-
-                <!-- Dashboard Body: Widgets e Gráficos -->
-                <div class="dashboard-body">
-                    <div class="widget-grid">
-                        <div class="widget">
-                            <h4>Total de Vendas</h4>
-                            <p id="totalSalesCount">0</p>
-                        </div>
-                        <div class="widget">
-                            <h4>Faturamento Total</h4>
-                            <p id="totalRevenue">R$ 0,00</p>
-                        </div>
-                        <div class="widget">
-                            <h4>Ticket Médio</h4>
-                            <p id="averageTicket">R$ 0,00</p>
-                        </div>
-                        <div class="widget">
-                            <h4>Mais Vendido</h4>
-                            <p id="bestSellingProduct">-</p>
-                        </div>
-                    </div>
-
-                    <div class="chart-card">
-                        <h3>Faturamento por Período</h3>
-                        <canvas id="revenueChart"></canvas>
-                    </div>
-
-                    <div class="chart-card">
-                        <h3>Vendas por Produto</h3>
-                        <canvas id="productChart"></canvas>
+                <div class="chart-box">
+                    <h2>Total de Vendas Mensais (R$)</h2>
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Tabela de Detalhes -->
+            <div class="data-table-container">
+                <h2>Detalhe de Todas as Vendas</h2>
+                <table id="salesTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Produto</th>
+                            <th>Quantidade</th>
+                            <th>Valor Unitário (R$)</th>
+                            <th>Total (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salesTableBody">
+                        <tr><td colspan="5" style="text-align: center;">Carregando dados...</td></tr>
+                    </tbody>
+                </table>
+                <div id="reportEmptyState" class="hidden">
+                    <div class="empty-state">
+                        <div style="font-size: 60px;">😟</div>
+                        <h3>Sem dados para gerar o relatório</h3>
+                        <p>Registre algumas vendas para visualizar o dashboard.</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+
     <script>
-        // Variáveis globais para o estado da aplicação
+        // CONFIGURE A URL DO SEU APPS SCRIPT AQUI
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxv1edh1yQhpNY2cERNJk12kmusHVbfDhxM1HuiZl6FhdacgeYBiXT9R0PD0CeisF-Y/exec';
+
         let currentUser = null;
         let sales = [];
-        let revenueChartInstance = null;
+        let editingId = null;
+        
+        // Instâncias do Chart.js
         let productChartInstance = null;
+        let monthlyChartInstance = null;
 
-        // Dados de usuários simulados
-        const mockUsers = {
-            'admin@vendas.com': { password: '123456', name: 'Admin', ventureName: 'Vendas Pro', email: 'admin@vendas.com' },
-            'user1@empresa.com': { password: '123456', name: 'Maria Silva', ventureName: 'Tech Solutions', email: 'user1@empresa.com' }
-        };
 
-        // --- Funções de Navegação de Tela ---
+        document.getElementById('saleDate').valueAsDate = new Date();
 
-        function showLoginScreen() {
-            // FIX CRÍTICO: Resetar o estado do botão de login ao retornar para esta tela
-            const loginButton = document.getElementById('loginButton');
-            if (loginButton) {
-                loginButton.disabled = false;
-                loginButton.textContent = 'Entrar';
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+        }
+
+        function showLogin() {
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+        }
+
+        async function register() {
+            const name = document.getElementById('registerName').value;
+            const ventureName = document.getElementById('registerVenture').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const msgDiv = document.getElementById('registerMessage');
+            const btn = document.getElementById('btnRegister');
+
+            if (!name || !ventureName || !email || !password) {
+                msgDiv.innerHTML = '<div class="error">Por favor, preencha todos os campos!</div>';
+                return;
             }
 
-            // Oculta a tela principal e mostra a tela de autenticação
-            document.getElementById('authScreen').style.display = 'flex';
-            document.getElementById('mainScreen').style.display = 'none';
-        }
+            if (password.length < 6) {
+                msgDiv.innerHTML = '<div class="error">A senha deve ter pelo menos 6 caracteres!</div>';
+                return;
+            }
 
-        function showMainScreen() {
-            // Oculta a tela de autenticação e mostra a tela principal
-            document.getElementById('authScreen').style.display = 'none';
-            document.getElementById('mainScreen').style.display = 'flex';
-            
-            // Atualiza os elementos do Header e Dashboard
-            updateHeader();
-            loadAndRenderDashboard();
-        }
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Cadastrando...';
 
-        // --- Funções de Autenticação ---
+            try {
+                const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                
+                if (users.find(u => u.email === email)) {
+                    msgDiv.innerHTML = '<div class="error">Este email já está cadastrado!</div>';
+                    btn.disabled = false;
+                    btn.textContent = 'Criar Conta';
+                    return;
+                }
+
+                users.push({ name, ventureName, email, password }); 
+                localStorage.setItem('registeredUsers', JSON.stringify(users));
+
+                fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'register', name, ventureName, email, password })
+                }).catch(err => console.log('Erro ao registrar no servidor:', err));
+
+                msgDiv.innerHTML = '<div class="success">Conta criada com sucesso! Faça login.</div>';
+                setTimeout(() => {
+                    showLogin();
+                    msgDiv.innerHTML = '';
+                }, 2000);
+
+            } catch (error) {
+                msgDiv.innerHTML = '<div class="error">Erro ao cadastrar. Tente novamente.</div>';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Criar Conta';
+            }
+        }
 
         async function login() {
-            const emailInput = document.getElementById('email').value.trim();
-            const passwordInput = document.getElementById('password').value;
-            const loginButton = document.getElementById('loginButton');
-            const loginError = document.getElementById('loginError');
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const msgDiv = document.getElementById('loginMessage');
+            const btn = document.getElementById('btnLogin');
 
-            // 1. Desabilita o botão e muda o texto para feedback visual
-            loginButton.disabled = true;
-            loginButton.textContent = 'Entrando...';
-            loginError.textContent = '';
+            if (!email || !password) {
+                msgDiv.innerHTML = '<div class="error">Por favor, preencha todos os campos!</div>';
+                return;
+            }
 
-            // Simula um delay de rede
-            await new Promise(resolve => setTimeout(resolve, 800));
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Entrando...';
 
-            const userExists = mockUsers[emailInput];
+            try {
+                const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                const user = users.find(u => u.email === email && u.password === password);
 
-            if (userExists && userExists.password === passwordInput) {
-                // Autenticação bem-sucedida
-                currentUser = {
-                    name: userExists.name,
-                    ventureName: userExists.ventureName,
-                    email: userExists.email
+                if (!user) {
+                    msgDiv.innerHTML = '<div class="error">Email ou senha incorretos! Se não tem conta, crie uma.</div>';
+                    btn.disabled = false;
+                    btn.textContent = 'Entrar';
+                    return;
+                }
+
+                // Login bem-sucedido: inclui ventureName (garantindo que sempre exista)
+                currentUser = { 
+                    name: user.name, 
+                    ventureName: user.ventureName || user.name + ' - Vendas', 
+                    email: user.email 
                 };
-
-                // Salva o usuário no localStorage para persistência
                 localStorage.setItem('user', JSON.stringify(currentUser));
 
-                // Carrega dados de vendas específicos do usuário
+                fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'login', email, password })
+                }).catch(err => console.log('Erro ao validar no servidor:', err));
+
+                msgDiv.innerHTML = '<div class="success">Login realizado com sucesso!</div>';
+                
+                setTimeout(() => {
+                    showMainScreen();
+                    msgDiv.innerHTML = '';
+                }, 800);
+
+            } catch (error) {
+                msgDiv.innerHTML = '<div class="error">Erro ao fazer login. Tente novamente.</div>';
+                btn.disabled = false;
+                btn.textContent = 'Entrar';
+            }
+        }
+        
+        function showMainScreen() {
+            if (!currentUser || !currentUser.email) {
+                console.error('Erro: Você precisa fazer login primeiro!');
+                logout();
+                return;
+            }
+
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('mainScreen').style.display = 'flex';
+            document.getElementById('reportScreen').style.display = 'none'; 
+            
+            const avatarLetter = currentUser.name[0].toUpperCase();
+            const ventureName = currentUser.ventureName || 'Minhas Vendas';
+            
+            document.getElementById('userAvatar').textContent = avatarLetter;
+            document.getElementById('reportAvatar').textContent = avatarLetter;
+            
+            document.getElementById('mainTitle').innerHTML = `✍️ ${ventureName}`;
+            document.getElementById('reportTitle').innerHTML = `📈 Relatório de Vendas: ${ventureName}`;
+
+            loadSales();
+        }
+        
+        function showReportScreen() {
+            if (sales.length === 0) {
+                if (confirm('Você precisa registrar pelo menos uma venda para gerar o relatório! Quer registrar uma agora?')) {
+                    showMainScreen();
+                }
+                return;
+            }
+
+            document.getElementById('mainScreen').style.display = 'none';
+            document.getElementById('reportScreen').style.display = 'flex'; 
+            
+            renderReport();
+        }
+
+        function logout() {
+            if (confirm('Tem certeza que deseja sair?')) {
+                currentUser = null;
+                sales = [];
+                localStorage.removeItem('user');
+                document.getElementById('mainScreen').style.display = 'none';
+                document.getElementById('reportScreen').style.display = 'none'; 
+                document.getElementById('authScreen').style.display = 'flex';
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('loginMessage').innerHTML = '';
+            }
+        }
+        
+        function toggleAvatarDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            dropdown.classList.toggle('active');
+        }
+
+        function calculateTotal() {
+            const quantity = parseFloat(document.getElementById('saleQuantity').value) || 0;
+            const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value) || 0;
+            const total = quantity * unitPrice;
+            document.getElementById('saleTotal').value = total.toFixed(2);
+        }
+
+        async function addSale() {
+            const date = document.getElementById('saleDate').value;
+            const product = document.getElementById('saleProduct').value;
+            const quantity = parseFloat(document.getElementById('saleQuantity').value);
+            const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value);
+            const total = parseFloat(document.getElementById('saleTotal').value);
+            const btn = document.getElementById('btnAddSale');
+
+            if (!date || !product || !quantity || !unitPrice) {
+                console.error('Por favor, preencha todos os campos!');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Salvando...'; 
+
+            const sale = { 
+                id: editingId || Date.now(),
+                email: currentUser.email, 
+                date, 
+                product, 
+                quantity, 
+                unitPrice, 
+                total 
+            };
+
+            try {
+                if (editingId) {
+                    const index = sales.findIndex(s => s.id === editingId);
+                    if (index !== -1) {
+                        sales[index] = sale;
+                    }
+                    
+                    fetch(API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'updateSale', ...sale })
+                    }).catch(err => console.log('Erro ao atualizar no servidor:', err));
+                    
+                    editingId = null;
+                } else {
+                    sales.push(sale);
+                    
+                    fetch(API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'saveSale', ...sale })
+                    }).catch(err => console.log('Erro ao salvar no servidor:', err));
+                }
+
+                localStorage.setItem(`sales_${currentUser.email}`, JSON.stringify(sales));
+
+                clearForm();
+                displaySales();
+                if (document.getElementById('reportScreen').style.display !== 'none') {
+                     renderReport();
+                }
+
+            } catch (error) {
+                console.error('Erro ao salvar venda. Tente novamente.', error);
+            } finally {
+                btn.disabled = false;
+                const finalText = editingId ? '💾 Salvar Alterações' : '➕ Adicionar Venda';
+                btn.innerHTML = `<span id="btnAddText">${finalText}</span>`; 
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('saleDate').valueAsDate = new Date();
+            document.getElementById('saleProduct').value = '';
+            document.getElementById('saleQuantity').value = '1';
+            document.getElementById('saleUnitPrice').value = '';
+            document.getElementById('saleTotal').value = '';
+        }
+
+        async function loadSales() {
+            try {
                 const savedSales = localStorage.getItem(`sales_${currentUser.email}`);
                 if (savedSales) {
                     sales = JSON.parse(savedSales);
-                } else {
-                    sales = [];
+                    displaySales();
                 }
 
-                // Navega para a tela principal
-                showMainScreen();
-            } else {
-                // Autenticação falhou
-                loginError.textContent = 'E-mail ou senha incorretos.';
-                
-                // 2. Reabilita o botão e restaura o texto
-                loginButton.disabled = false;
-                loginButton.textContent = 'Entrar';
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'getSales', email: currentUser.email })
+                });
+
+                const data = await response.json();
+                if (data.success && data.sales) {
+                    sales = data.sales;
+                    localStorage.setItem(`sales_${currentUser.email}`, JSON.stringify(sales));
+                    displaySales();
+                }
+            } catch (error) {
+                console.log('Usando dados locais:', error);
+                displaySales();
             }
         }
-        
-        function logout() {
-            // Limpa o estado global e o armazenamento local
-            if (currentUser && currentUser.email) {
-                 localStorage.removeItem(`sales_${currentUser.email}`); // Remove vendas (opcional, mas limpa a sessão)
-            }
-            localStorage.removeItem('user');
-            currentUser = null;
-            sales = [];
 
-            // Volta para a tela de login
-            showLoginScreen();
+        function displaySales() {
+            const container = document.getElementById('salesContainer');
+            
+            if (sales.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 60px;">📊</div>
+                        <h3>Nenhuma venda registrada ainda</h3>
+                        <p>Adicione sua primeira venda usando o formulário acima</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = sales.map(sale => `
+                <div class="sale-card">
+                    <div class="sale-header">
+                        <div class="sale-date">📅 ${formatDate(sale.date)}</div>
+                        <div class="sale-actions">
+                            <button class="btn-small btn-edit" onclick="editSale(${sale.id})">✏️ Editar</button>
+                            <button class="btn-small btn-delete" onclick="deleteSale(${sale.id})">🗑️ Excluir</button>
+                        </div>
+                    </div>
+                    <div class="sale-details">
+                        <div class="sale-detail">
+                            <div class="sale-detail-label">Produto/Serviço</div>
+                            <div class="sale-detail-value">${sale.product}</div>
+                        </div>
+                        <div class="sale-detail">
+                            <div class="sale-detail-label">Quantidade</div>
+                            <div class="sale-detail-value">${sale.quantity}</div>
+                        </div>
+                        <div class="sale-detail">
+                            <div class="sale-detail-label">Valor Unitário</div>
+                            <div class="sale-detail-value">R$ ${sale.unitPrice.toFixed(2).replace('.', ',')}</div>
+                        </div>
+                        <div class="sale-detail">
+                            <div class="sale-detail-label">Total</div>
+                            <div class="sale-detail-value total-value">R$ ${sale.total.toFixed(2).replace('.', ',')}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
 
+        function editSale(id) {
+            const sale = sales.find(s => s.id === id);
+            if (!sale) return;
 
-        // --- Funções do Dashboard e Vendas ---
-
-        function updateHeader() {
-            if (currentUser) {
-                document.getElementById('ventureNameDisplay').textContent = currentUser.ventureName;
-                document.getElementById('userNameDisplay').textContent = `Olá, ${currentUser.name}`;
-                document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
-            }
+            document.getElementById('saleDate').value = sale.date;
+            document.getElementById('saleProduct').value = sale.product;
+            document.getElementById('saleQuantity').value = sale.quantity;
+            document.getElementById('saleUnitPrice').value = sale.unitPrice;
+            document.getElementById('saleTotal').value = sale.total.toFixed(2);
+            
+            editingId = id;
+            document.getElementById('btnAddText').textContent = '💾 Salvar Alterações';
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-        
-        function saveSales() {
-             if (currentUser && currentUser.email) {
+
+        async function deleteSale(id) {
+            if (!confirm('Tem certeza que deseja excluir esta venda?')) return;
+
+            try {
+                sales = sales.filter(s => s.id !== id);
                 localStorage.setItem(`sales_${currentUser.email}`, JSON.stringify(sales));
-             }
+                displaySales();
+                
+                if (document.getElementById('reportScreen').style.display !== 'none') {
+                     renderReport();
+                }
+
+                fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'deleteSale', id })
+                }).catch(err => console.log('Erro ao deletar no servidor:', err));
+
+            } catch (error) {
+                console.error('Erro ao excluir venda. Tente novamente.', error);
+            }
         }
 
-        function calculateMetrics() {
-            const totalRevenue = sales.reduce((sum, sale) => sum + sale.value, 0);
-            const totalSalesCount = sales.length;
-            const averageTicket = totalSalesCount > 0 ? totalRevenue / totalSalesCount : 0;
+        function formatDate(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            return date.toLocaleDateString('pt-BR', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric' 
+            });
+        }
 
-            document.getElementById('totalSalesCount').textContent = totalSalesCount.toString();
-            document.getElementById('totalRevenue').textContent = `R$ ${totalRevenue.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
-            document.getElementById('averageTicket').textContent = `R$ ${averageTicket.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
-
-            // Produto Mais Vendido
-            const productCounts = sales.reduce((acc, sale) => {
-                acc[sale.product] = (acc[sale.product] || 0) + 1;
-                return acc;
-            }, {});
-
-            let bestSellingProduct = 'N/A';
-            let maxCount = 0;
-            for (const product in productCounts) {
-                if (productCounts[product] > maxCount) {
-                    maxCount = productCounts[product];
-                    bestSellingProduct = product;
+        async function submitReport() {
+            if (sales.length === 0) {
+                if (confirm('Adicione pelo menos uma venda antes de enviar o relatório! Quer adicionar agora?')) {
+                    return;
                 }
             }
-            document.getElementById('bestSellingProduct').textContent = bestSellingProduct;
-        }
 
-        function renderSalesTable() {
+            const btn = document.getElementById('btnSubmitReport');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Enviando relatório...';
+
+            const totalSales = sales.length;
+            const totalValue = sales.reduce((sum, sale) => sum + sale.total, 0);
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'submitReport', 
+                        email: currentUser.email,
+                        totalSales,
+                        totalValue 
+                    })
+                });
+
+                if (confirm(`✅ Relatório enviado com sucesso!\n\nTotal de vendas: ${totalSales}\nValor total: R$ ${totalValue.toFixed(2)}\n\n(Os dados foram salvos no Google Sheets. OK para continuar)`)) {
+                }
+
+            } catch (error) {
+                console.error('Erro ao enviar relatório. Tente novamente.', error);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📤 Enviar Relatório de Vendas';
+            }
+        }
+        
+        function renderReport() {
+            const summaryCards = document.getElementById('summaryCards');
             const tableBody = document.getElementById('salesTableBody');
-            tableBody.innerHTML = ''; // Limpa a tabela
+            const reportEmptyState = document.getElementById('reportEmptyState');
+
+            if (productChartInstance) productChartInstance.destroy();
+            if (monthlyChartInstance) monthlyChartInstance.destroy();
 
             if (sales.length === 0) {
-                 tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #777;">Nenhuma venda registrada.</td></tr>';
-                 return;
+                summaryCards.innerHTML = '';
+                tableBody.innerHTML = '';
+                reportEmptyState.classList.remove('hidden');
+                return;
             }
 
-            // Exibe apenas as 5 vendas mais recentes
-            const recentSales = sales.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+            reportEmptyState.classList.add('hidden');
 
-            recentSales.forEach(sale => {
-                const row = tableBody.insertRow();
-                row.insertCell().textContent = sale.product;
-                row.insertCell().textContent = `R$ ${sale.value.toFixed(2).replace('.', ',')}`;
-                // Formata a data para dd/mm/aaaa
-                row.insertCell().textContent = new Date(sale.date).toLocaleDateString('pt-BR');
-            });
-        }
-        
-        function setupCharts() {
-            // Destrói instâncias antigas para evitar sobreposição
-            if (revenueChartInstance) revenueChartInstance.destroy();
-            if (productChartInstance) productChartInstance.destroy();
-            
-            // 1. Dados para Faturamento por Período (Mensal)
-            const revenueByMonth = sales.reduce((acc, sale) => {
-                const monthYear = new Date(sale.date).toISOString().substring(0, 7); // yyyy-mm
-                acc[monthYear] = (acc[monthYear] || 0) + sale.value;
-                return acc;
-            }, {});
+            const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
+            const totalQuantity = sales.reduce((sum, sale) => sum + sale.quantity, 0);
+            const uniqueTransactions = sales.length;
+            const avgPrice = uniqueTransactions > 0 ? totalRevenue / uniqueTransactions : 0;
 
-            const sortedMonths = Object.keys(revenueByMonth).sort();
-            const monthlyRevenueData = sortedMonths.map(month => revenueByMonth[month]);
-            const monthlyLabels = sortedMonths.map(month => {
-                const [year, monthNum] = month.split('-');
-                return new Date(year, monthNum - 1).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
-            });
+            summaryCards.innerHTML = `
+                <div class="card total-revenue">
+                    <div class="card-title">Receita Total</div>
+                    <div class="card-value">R$ ${totalRevenue.toFixed(2).replace('.', ',')}</div>
+                </div>
+                <div class="card total-sales">
+                    <div class="card-title">Transações Únicas</div>
+                    <div class="card-value">${uniqueTransactions}</div>
+                </div>
+                <div class="card avg-price">
+                    <div class="card-title">Ticket Médio por Transação</div>
+                    <div class="card-value">R$ ${avgPrice.toFixed(2).replace('.', ',')}</div>
+                </div>
+                <div class="card total-sales">
+                    <div class="card-title">Total de Itens Vendidos</div>
+                    <div class="card-value">${totalQuantity}</div>
+                </div>
+            `;
 
-            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-            revenueChartInstance = new Chart(revenueCtx, {
-                type: 'line',
-                data: {
-                    labels: monthlyLabels,
-                    datasets: [{
-                        label: 'Faturamento (R$)',
-                        data: monthlyRevenueData,
-                        borderColor: '#667eea',
-                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-
-            // 2. Dados para Vendas por Produto
             const salesByProduct = sales.reduce((acc, sale) => {
-                acc[sale.product] = (acc[sale.product] || 0) + 1;
+                acc[sale.product] = (acc[sale.product] || 0) + sale.total;
                 return acc;
             }, {});
 
-            const productLabels = Object.keys(salesByProduct);
-            const productData = productLabels.map(product => salesByProduct[product]);
+            const salesByMonth = sales.reduce((acc, sale) => {
+                const monthYear = sale.date.substring(0, 7);
+                acc[monthYear] = (acc[monthYear] || 0) + sale.total;
+                return acc;
+            }, {});
+            
+            const monthLabels = Object.keys(salesByMonth)
+                .sort()
+                .map(my => {
+                    const [year, month] = my.split('-');
+                    return `${month}/${year}`;
+                });
+            const monthlyData = Object.keys(salesByMonth).sort().map(key => salesByMonth[key]);
 
-            const productCtx = document.getElementById('productChart').getContext('2d');
-            productChartInstance = new Chart(productCtx, {
+            productChartInstance = new Chart(document.getElementById('productChart'), {
                 type: 'bar',
                 data: {
-                    labels: productLabels,
+                    labels: Object.keys(salesByProduct),
                     datasets: [{
-                        label: 'Número de Vendas',
-                        data: productData,
-                        backgroundColor: ['#667eea', '#764ba2', '#a266ea', '#ea66a2'],
+                        label: 'Receita (R$)',
+                        data: Object.values(salesByProduct),
+                        backgroundColor: '#667eea',
+                        borderColor: '#764ba2',
+                        borderWidth: 1
                     }]
                 },
                 options: {
                     responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Receita (R$)' },
+                            ticks: { callback: (value) => `R$ ${value.toLocaleString('pt-BR')}` }
+                        }
+                    }
                 }
             });
+
+            monthlyChartInstance = new Chart(document.getElementById('monthlyChart'), {
+                type: 'line',
+                data: {
+                    labels: monthLabels,
+                    datasets: [{
+                        label: 'Total Mensal (R$)',
+                        data: monthlyData,
+                        backgroundColor: 'rgba(39, 174, 96, 0.4)',
+                        borderColor: '#27ae60',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Receita (R$)' },
+                            ticks: { callback: (value) => `R$ ${value.toLocaleString('pt-BR')}` }
+                        },
+                        x: { title: { display: true, text: 'Mês/Ano' } }
+                    }
+                }
+            });
+
+            tableBody.innerHTML = sales.sort((a, b) => new Date(b.date) - new Date(a.date))
+                .map(sale => `
+                    <tr>
+                        <td>${formatDate(sale.date)}</td>
+                        <td>${sale.product}</td>
+                        <td>${sale.quantity}</td>
+                        <td>R$ ${sale.unitPrice.toFixed(2).replace('.', ',')}</td>
+                        <td><span class="total-value">R$ ${sale.total.toFixed(2).replace('.', ',')}</span></td>
+                    </tr>
+                `).join('');
         }
 
-        function loadAndRenderDashboard() {
-            calculateMetrics();
-            renderSalesTable();
-            setupCharts();
-        }
-
-        // --- Inicialização e Listeners ---
-
-        document.addEventListener('DOMContentLoaded', () => {
-            // Tenta carregar usuário do localStorage
+        window.onload = function() {
             const savedUser = localStorage.getItem('user');
             if (savedUser) {
                 try {
                     currentUser = JSON.parse(savedUser);
                     
-                    // Verifica se o usuário simulado ainda existe (para robustez)
-                    const userExists = mockUsers[currentUser.email];
-                    if (userExists) {
-                         // Recarrega vendas
-                        const savedSales = localStorage.getItem(`sales_${currentUser.email}`);
-                        if (savedSales) {
-                            sales = JSON.parse(savedSales);
-                        }
-                        showMainScreen();
-                    } else {
-                        // Usuário no storage não é válido/existe mais
+                    // Verificar se o usuário está registrado (verificação simplificada - apenas email)
+                    const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                    const userExists = users.find(u => u.email === currentUser.email);
+                    
+                    if (!userExists) {
+                        // Usuário não está registrado, fazer logout
                         localStorage.removeItem('user');
                         currentUser = null;
-                        showLoginScreen();
+                        console.error('Sessão inválida. Por favor, faça login novamente.');
+                        return;
                     }
+                    
+                    // Atualizar dados do usuário com informações mais recentes do registro
+                    currentUser = {
+                        name: userExists.name,
+                        ventureName: userExists.ventureName || userExists.name + ' - Vendas',
+                        email: userExists.email
+                    };
+                    localStorage.setItem('user', JSON.stringify(currentUser));
+                    
+                    const savedSales = localStorage.getItem(`sales_${currentUser.email}`);
+                    if (savedSales) {
+                        sales = JSON.parse(savedSales);
+                    }
+                    
+                    showMainScreen();
                 } catch (error) {
-                    console.error("Erro ao carregar usuário salvo:", error);
                     localStorage.removeItem('user');
                     currentUser = null;
-                    showLoginScreen();
                 }
-            } else {
-                showLoginScreen();
             }
-
-            // Listener para o formulário de vendas
-            document.getElementById('salesForm').addEventListener('submit', function(event) {
-                event.preventDefault();
-                
-                const product = document.getElementById('product').value;
-                const value = parseFloat(document.getElementById('value').value);
-                const date = document.getElementById('date').value;
-                const client = document.getElementById('client').value;
-                const messageElement = document.getElementById('salesMessage');
-                const submitBtn = document.getElementById('submitSalesBtn');
-
-                if (product && value > 0 && date && client) {
-                    const newSale = { product, value, date, client, id: Date.now() };
-                    sales.push(newSale);
-                    saveSales();
-                    
-                    // Feedback visual e reset
-                    messageElement.textContent = 'Venda registrada com sucesso!';
-                    messageElement.style.color = '#2ecc71';
-                    
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Registrando...';
-                    
-                    setTimeout(() => {
-                        // Limpa o formulário e reabilita o botão após 1 segundo
-                        document.getElementById('salesForm').reset();
-                        loadAndRenderDashboard(); // Atualiza o dashboard
-                        messageElement.textContent = '';
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Registrar Venda';
-                    }, 1000);
-
-                } else {
-                    messageElement.textContent = 'Por favor, preencha todos os campos.';
-                    messageElement.style.color = '#e74c3c';
-                }
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.avatar-dropdown').forEach(dropdown => {
+                dropdown.querySelector('.avatar').onclick = (event) => {
+                    event.stopPropagation();
+                    toggleAvatarDropdown(dropdown.id);
+                };
             });
             
-            // Listener para o Avatar Dropdown
-            document.getElementById('userAvatar').onclick = (event) => {
-                event.stopPropagation();
-                document.getElementById('avatarDropdown').classList.toggle('active');
-            };
-            
             document.addEventListener('click', function(event) {
-                const dropdown = document.getElementById('avatarDropdown');
-                if (dropdown && dropdown.classList.contains('active') && !dropdown.contains(event.target)) {
-                    dropdown.classList.remove('active');
-                }
+                document.querySelectorAll('.avatar-dropdown').forEach(dropdown => {
+                    if (dropdown.classList.contains('active') && !dropdown.contains(event.target)) {
+                        dropdown.classList.remove('active');
+                    }
+                });
             });
         });
     </script>
