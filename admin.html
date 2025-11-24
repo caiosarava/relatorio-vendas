@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Relatório de Vendas</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+
+        .auth-container {
+            padding: 60px 40px;
+            text-align: center;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .auth-container h1 {
+            color: #1e3c72;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .auth-container p {
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(30, 60, 114, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #fcc;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #cfc;
+        }
+
+        .dashboard {
+            display: none;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 30px 40px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .refresh-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: white;
+            color: #1e3c72;
+        }
+
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 15px;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .stat-card.revenue {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+
+        .stat-card.users {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+
+        .stat-card.products {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        .stat-card.avg {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .chart-box {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-box.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-box h2 {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .table-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+            margin-bottom: 30px;
+        }
+
+        .table-container h2 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #f4f4f8;
+            color: #1e3c72;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .filter-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        .filter-group input, .filter-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95em;
+        }
+
+        .filter-btn {
+            padding: 10px 25px;
+            background: #1e3c72;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover {
+            background: #2a5298;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .header-info {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-section {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Tela de Login Admin -->
+    <div id="authScreen" class="container">
+        <div class="auth-container">
+            <h1>🔐 Admin Dashboard</h1>
+            <p>Acesso restrito para administradores</p>
+            
+            <div class="form-group">
+                <label>Usuário Admin</label>
+                <input type="text" id="adminUser" placeholder="admin">
+            </div>
+            <div class="form-group">
+                <label>Senha Admin</label>
+                <input type="password" id="adminPass" placeholder="••••••">
+            </div>
+            <button class="btn btn-primary" onclick="adminLogin()" id="btnLogin">
+                Entrar
+            </button>
+            <div id="loginMessage"></div>
+        </div>
+    </div>
+
+    <!-- Dashboard Admin -->
+    <div id="dashboardScreen" class="container dashboard">
+        <div class="header">
+            <h1>📊 Dashboard Administrativo</h1>
+            <div class="header-info">
+                <button class="refresh-btn" onclick="loadDashboardData()">🔄 Atualizar Dados</button>
+                <button class="logout-btn" onclick="adminLogout()">Sair</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Filtros -->
+            <div class="filter-section">
+                <div class="filter-group">
+                    <label>Data Inicial</label>
+                    <input type="date" id="filterStartDate">
+                </div>
+                <div class="filter-group">
+                    <label>Data Final</label>
+                    <input type="date" id="filterEndDate">
+                </div>
+                <div class="filter-group">
+                    <label>Usuário</label>
+                    <select id="filterUser">
+                        <option value="">Todos os usuários</option>
+                    </select>
+                </div>
+                <button class="filter-btn" onclick="applyFilters()">Aplicar Filtros</button>
+            </div>
+
+            <!-- Cards de Estatísticas -->
+            <div class="stats-grid">
+                <div class="stat-card revenue">
+                    <div class="stat-label">Receita Total</div>
+                    <div class="stat-value" id="totalRevenue">R$ 0,00</div>
+                </div>
+                <div class="stat-card users">
+                    <div class="stat-label">Usuários Ativos</div>
+                    <div class="stat-value" id="totalUsers">0</div>
+                </div>
+                <div class="stat-card products">
+                    <div class="stat-label">Total de Vendas</div>
+                    <div class="stat-value" id="totalSales">0</div>
+                </div>
+                <div class="stat-card avg">
+                    <div class="stat-label">Ticket Médio</div>
+                    <div class="stat-value" id="avgTicket">R$ 0,00</div>
+                </div>
+            </div>
+
+            <!-- Gráficos -->
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <h2>Top 10 Produtos Mais Vendidos (Quantidade)</h2>
+                    <canvas id="topProductsChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h2>Top 10 Produtos por Receita (R$)</h2>
+                    <canvas id="revenueProductsChart"></canvas>
+                </div>
+                <div class="chart-box full-width">
+                    <h2>Receita por Período (Últimos 12 Meses)</h2>
+                    <canvas id="timelineChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h2>Vendas por Usuário</h2>
+                    <canvas id="userSalesChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h2>Distribuição de Receita por Usuário</h2>
+                    <canvas id="userRevenueChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Tabela de Produtos -->
+            <div class="table-container">
+                <h2>📦 Detalhamento de Produtos</h2>
+                <table id="productsTable">
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th>Quantidade Vendida</th>
+                            <th>Receita Total</th>
+                            <th>Preço Médio</th>
+                            <th>Nº Transações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTableBody">
+                        <tr><td colspan="5" style="text-align: center;">Carregando dados...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tabela de Vendas por Data -->
+            <div class="table-container">
+                <h2>📅 Vendas por Data</h2>
+                <table id="dateTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Quantidade de Vendas</th>
+                            <th>Receita Total</th>
+                            <th>Ticket Médio</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dateTableBody">
+                        <tr><td colspan="4" style="text-align: center;">Carregando dados...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tabela de Usuários -->
+            <div class="table-container">
+                <h2>👥 Análise por Usuário</h2>
+                <table id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Email</th>
+                            <th>Total de Vendas</th>
+                            <th>Receita Total</th>
+                            <th>Ticket Médio</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr><td colspan="5" style="text-align: center;">Carregando dados...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tabela de Todas as Vendas -->
+            <div class="table-container">
+                <h2>📋 Todas as Vendas (Detalhado)</h2>
+                <table id="allSalesTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Usuário</th>
+                            <th>Produto</th>
+                            <th>Quantidade</th>
+                            <th>Valor Unit.</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="allSalesTableBody">
+                        <tr><td colspan="6" style="text-align: center;">Carregando dados...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Credenciais admin (em produção, use autenticação server-side segura)
+        const ADMIN_CREDENTIALS = {
+            user: 'daes',
+            pass: 'olimpicodaes1'
+        };
+
+        let allSalesData = [];
+        let filteredSalesData = [];
+        let chartInstances = {};
+
+        function adminLogin() {
+            const user = document.getElementById('adminUser').value;
+            const pass = document.getElementById('adminPass').value;
+            const msgDiv = document.getElementById('loginMessage');
+            const btn = document.getElementById('btnLogin');
+
+            if (!user || !pass) {
+                msgDiv.innerHTML = '<div class="error">Preencha todos os campos!</div>';
+                return;
+            }
+
+            if (user === ADMIN_CREDENTIALS.user && pass === ADMIN_CREDENTIALS.pass) {
+                msgDiv.innerHTML = '<div class="success">Login realizado com sucesso!</div>';
+                btn.disabled = true;
+                
+                setTimeout(() => {
+                    document.getElementById('authScreen').style.display = 'none';
+                    document.getElementById('dashboardScreen').style.display = 'block';
+                    loadDashboardData();
+                }, 800);
+            } else {
+                msgDiv.innerHTML = '<div class="error">Credenciais inválidas!</div>';
+            }
+        }
+
+        function adminLogout() {
+            if (confirm('Deseja sair do dashboard admin?')) {
+                document.getElementById('dashboardScreen').style.display = 'none';
+                document.getElementById('authScreen').style.display = 'block';
+                document.getElementById('adminUser').value = '';
+                document.getElementById('adminPass').value = '';
+                document.getElementById('loginMessage').innerHTML = '';
+            }
+        }
+
+        function loadDashboardData() {
+            // Carregar dados de todos os usuários do localStorage
+            allSalesData = [];
+            const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+            
+            registeredUsers.forEach(user => {
+                const userSales = JSON.parse(localStorage.getItem(`sales_${user.email}`) || '[]');
+                userSales.forEach(sale => {
+                    allSalesData.push({
+                        ...sale,
+                        userName: user.name,
+                        userEmail: user.email,
+                        ventureName: user.ventureName || user.name
+                    });
+                });
+            });
+
+            // Aplicar filtros iniciais
+            filteredSalesData = [...allSalesData];
+            
+            // Preencher filtro de usuários
+            populateUserFilter(registeredUsers);
+            
+            // Renderizar dashboard
+            renderDashboard();
+        }
+
+        function populateUserFilter(users) {
+            const filterUser = document.getElementById('filterUser');
+            filterUser.innerHTML = '<option value="">Todos os usuários</option>';
+            
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.email;
+                option.textContent = `${user.name} (${user.email})`;
+                filterUser.appendChild(option);
+            });
+        }
+
+        function applyFilters() {
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+            const selectedUser = document.getElementById('filterUser').value;
+
+            filteredSalesData = allSalesData.filter(sale => {
+                let match = true;
+                
+                if (startDate && sale.date < startDate) match = false;
+                if (endDate && sale.date > endDate) match = false;
+                if (selectedUser && sale.userEmail !== selectedUser) match = false;
+                
+                return match;
+            });
+
+            renderDashboard();
+        }
+
+        function renderDashboard() {
+            const sales = filteredSalesData;
+
+            if (sales.length === 0) {
+                document.getElementById('totalRevenue').textContent = 'R$ 0,00';
+                document.getElementById('totalUsers').textContent = '0';
+                document.getElementById('totalSales').textContent = '0';
+                document.getElementById('avgTicket').textContent = 'R$ 0,00';
+                return;
+            }
+
+            // Calcular estatísticas gerais
+            const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0);
+            const uniqueUsers = new Set(sales.map(s => s.userEmail)).size;
+            const totalSales = sales.length;
+            const avgTicket = totalRevenue / totalSales;
+
+            document.getElementById('totalRevenue').textContent = `R$ ${totalRevenue.toFixed(2).replace('.', ',')}`;
+            document.getElementById('totalUsers').textContent = uniqueUsers;
+            document.getElementById('totalSales').textContent = totalSales;
+            document.getElementById('avgTicket').textContent = `R$ ${avgTicket.toFixed(2).replace('.', ',')}`;
+
+            // Renderizar gráficos e tabelas
+            renderTopProductsChart(sales);
+            renderRevenueProductsChart(sales);
+            renderTimelineChart(sales);
+            renderUserSalesChart(sales);
+            renderUserRevenueChart(sales);
+            renderProductsTable(sales);
+            renderDateTable(sales);
+            renderUsersTable(sales);
+            renderAllSalesTable(sales);
+        }
+
+        function renderTopProductsChart(sales) {
+            const productQuantities = sales.reduce((acc, sale) => {
+                acc[sale.product] = (acc[sale.product] || 0) + sale.quantity;
+                return acc;
+            }, {});
+
+            const sortedProducts = Object.entries(productQuantities)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            if (chartInstances.topProducts) chartInstances.topProducts.destroy();
+
+            chartInstances.topProducts = new Chart(document.getElementById('topProductsChart'), {
+                type: 'bar',
+                data: {
+                    labels: sortedProducts.map(p => p[0]),
+                    datasets: [{
+                        label: 'Quantidade',
+                        data: sortedProducts.map(p => p[1]),
+                        backgroundColor: '#3498db',
+                        borderColor: '#2980b9',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        function renderRevenueProductsChart(sales) {
+            const productRevenue = sales.reduce((acc, sale) => {
+                acc[sale.product] = (acc[sale.product] || 0) + sale.total;
+                return acc;
+            }, {});
+
+            const sortedProducts = Object.entries(productRevenue)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            if (chartInstances.revenueProducts) chartInstances.revenueProducts.destroy();
+
+            chartInstances.revenueProducts = new Chart(document.getElementById('revenueProductsChart'), {
+                type: 'bar',
+                data: {
+                    labels: sortedProducts.map(p => p[0]),
+                    datasets: [{
+                        label: 'Receita (R$)',
+                        data: sortedProducts.map(p => p[1]),
+                        backgroundColor: '#27ae60',
+                        borderColor: '#229954',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { callback: (value) => `R$ ${value.toLocaleString('pt-BR')}` }
+                        } 
+                    }
+                }
+            });
+        }
+
+        function renderTimelineChart(sales) {
+            const monthlyRevenue = sales.reduce((acc, sale) => {
+                const monthYear = sale.date.substring(0, 7);
+                acc[monthYear] = (acc[monthYear] || 0) + sale.total;
+                return acc;
+            }, {});
+
+            const sortedMonths = Object.keys(monthlyRevenue).sort().slice(-12);
+            const labels = sortedMonths.map(my => {
+                const [year, month] = my.split('-');
+                return `${month}/${year}`;
+            });
+            const data = sortedMonths.map(m => monthlyRevenue[m]);
+
+            if (chartInstances.timeline) chartInstances.timeline.destroy();
+
+            chartInstances.timeline = new Chart(document.getElementById('timelineChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Receita Mensal (R$)',
+                        data: data,
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        borderColor: '#667eea',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: true } },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { callback: (value) => `R$ ${value.toLocaleString('pt-BR')}` }
+                        } 
+                    }
+                }
+            });
+        }
+
+        function renderUserSalesChart(sales) {
+            const userSales = sales.reduce((acc, sale) => {
+                acc[sale.userName] = (acc[sale.userName] || 0) + 1;
+                return acc;
+            }, {});
+
+            const sortedUsers = Object.entries(userSales).sort((a, b) => b[1] - a[1]);
+
+            if (chartInstances.userSales) chartInstances.userSales.destroy();
+
+            chartInstances.userSales = new Chart(document.getElementById('userSalesChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: sortedUsers.map(u => u[0]),
+                    datasets: [{
+                        data: sortedUsers.map(u => u[1]),
+                        backgroundColor: [
+                            '#3498db', '#e74c3c', '#f39c12', '#9b59b6', 
+                            '#1abc9c', '#34495e', '#e67e22', '#95a5a6'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { 
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function renderUserRevenueChart(sales) {
+            const userRevenue = sales.reduce((acc, sale) => {
+                acc[sale.userName] = (acc[sale.userName] || 0) + sale.total;
+                return acc;
+            }, {});
+
+            const sortedUsers = Object.entries(userRevenue).sort((a, b) => b[1] - a[1]);
+
+            if (chartInstances.userRevenue) chartInstances.userRevenue.destroy();
+
+            chartInstances.userRevenue = new Chart(document.getElementById('userRevenueChart'), {
+                type: 'pie',
+                data: {
+                    labels: sortedUsers.map(u => u[0]),
+                    datasets: [{
+                        data: sortedUsers.map(u => u[1]),
+                        backgroundColor: [
+                            '#27ae60', '#8e44ad', '#d35400', '#c0392b',
+                            '#16a085', '#2c3e50', '#f39c12', '#7f8c8d'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { 
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    return `${label}: R$ ${value.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderProductsTable(sales) {
+            const productStats = sales.reduce((acc, sale) => {
+                if (!acc[sale.product]) {
+                    acc[sale.product] = {
+                        quantity: 0,
+                        revenue: 0,
+                        transactions: 0,
+                        totalPrice: 0
+                    };
+                }
+                acc[sale.product].quantity += sale.quantity;
+                acc[sale.product].revenue += sale.total;
+                acc[sale.product].transactions += 1;
+                acc[sale.product].totalPrice += sale.unitPrice;
+                return acc;
+            }, {});
+
+            const tbody = document.getElementById('productsTableBody');
+            
+            const sortedProducts = Object.entries(productStats)
+                .sort((a, b) => b[1].revenue - a[1].revenue);
+
+            if (sortedProducts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum dado disponível</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = sortedProducts.map(([product, stats]) => {
+                const avgPrice = stats.totalPrice / stats.transactions;
+                return `
+                    <tr>
+                        <td><strong>${product}</strong></td>
+                        <td>${stats.quantity}</td>
+                        <td><strong style="color: #27ae60;">R$ ${stats.revenue.toFixed(2).replace('.', ',')}</strong></td>
+                        <td>R$ ${avgPrice.toFixed(2).replace('.', ',')}</td>
+                        <td>${stats.transactions}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderDateTable(sales) {
+            const dateStats = sales.reduce((acc, sale) => {
+                if (!acc[sale.date]) {
+                    acc[sale.date] = {
+                        count: 0,
+                        revenue: 0
+                    };
+                }
+                acc[sale.date].count += 1;
+                acc[sale.date].revenue += sale.total;
+                return acc;
+            }, {});
+
+            const tbody = document.getElementById('dateTableBody');
+            
+            const sortedDates = Object.entries(dateStats)
+                .sort((a, b) => b[0].localeCompare(a[0]));
+
+            if (sortedDates.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Nenhum dado disponível</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = sortedDates.map(([date, stats]) => {
+                const avgTicket = stats.revenue / stats.count;
+                const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('pt-BR');
+                return `
+                    <tr>
+                        <td><strong>${formattedDate}</strong></td>
+                        <td>${stats.count}</td>
+                        <td><strong style="color: #27ae60;">R$ ${stats.revenue.toFixed(2).replace('.', ',')}</strong></td>
+                        <td>R$ ${avgTicket.toFixed(2).replace('.', ',')}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderUsersTable(sales) {
+            const userStats = sales.reduce((acc, sale) => {
+                const key = sale.userEmail;
+                if (!acc[key]) {
+                    acc[key] = {
+                        name: sale.userName,
+                        email: sale.userEmail,
+                        salesCount: 0,
+                        revenue: 0
+                    };
+                }
+                acc[key].salesCount += 1;
+                acc[key].revenue += sale.total;
+                return acc;
+            }, {});
+
+            const tbody = document.getElementById('usersTableBody');
+            
+            const sortedUsers = Object.values(userStats)
+                .sort((a, b) => b.revenue - a.revenue);
+
+            if (sortedUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum dado disponível</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = sortedUsers.map(user => {
+                const avgTicket = user.revenue / user.salesCount;
+                return `
+                    <tr>
+                        <td><strong>${user.name}</strong></td>
+                        <td>${user.email}</td>
+                        <td>${user.salesCount}</td>
+                        <td><strong style="color: #27ae60;">R$ ${user.revenue.toFixed(2).replace('.', ',')}</strong></td>
+                        <td>R$ ${avgTicket.toFixed(2).replace('.', ',')}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderAllSalesTable(sales) {
+            const tbody = document.getElementById('allSalesTableBody');
+            
+            const sortedSales = [...sales].sort((a, b) => b.date.localeCompare(a.date));
+
+            if (sortedSales.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum dado disponível</td></tr>';
+                return;
+            }
+
+            // Mostrar apenas as últimas 100 vendas para não sobrecarregar
+            const displaySales = sortedSales.slice(0, 100);
+
+            tbody.innerHTML = displaySales.map(sale => {
+                const formattedDate = new Date(sale.date + 'T00:00:00').toLocaleDateString('pt-BR');
+                return `
+                    <tr>
+                        <td>${formattedDate}</td>
+                        <td>${sale.userName}</td>
+                        <td>${sale.product}</td>
+                        <td>${sale.quantity}</td>
+                        <td>R$ ${sale.unitPrice.toFixed(2).replace('.', ',')}</td>
+                        <td><strong style="color: #27ae60;">R$ ${sale.total.toFixed(2).replace('.', ',')}</strong></td>
+                    </tr>
+                `;
+            }).join('');
+
+            if (sortedSales.length > 100) {
+                tbody.innerHTML += `
+                    <tr style="background: #f0f0f0;">
+                        <td colspan="6" style="text-align: center; font-style: italic; color: #666;">
+                            Mostrando 100 de ${sortedSales.length} vendas. Use os filtros para refinar a busca.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Configurar datas padrão nos filtros (últimos 30 dias)
+        window.onload = function() {
+            const today = new Date();
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+
+            document.getElementById('filterEndDate').valueAsDate = today;
+            document.getElementById('filterStartDate').valueAsDate = thirtyDaysAgo;
+        };
+
+        // Atalho de teclado para atualizar (Ctrl/Cmd + R)
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+                e.preventDefault();
+                if (document.getElementById('dashboardScreen').style.display === 'block') {
+                    loadDashboardData();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

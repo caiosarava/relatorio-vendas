@@ -315,6 +315,96 @@
 
             if (!name || !email || !password) return alert("Preencha todos os campos.");
             
+<<<<<<< HEAD
+=======
+            const avatarLetter = currentUser.name[0].toUpperCase();
+            const ventureName = currentUser.ventureName || 'Minhas Vendas';
+            
+            document.getElementById('userAvatar').textContent = avatarLetter;
+            document.getElementById('reportAvatar').textContent = avatarLetter;
+            
+            document.getElementById('mainTitle').innerHTML = `✍️ ${ventureName}`;
+            document.getElementById('reportTitle').innerHTML = `📈 Relatório de Vendas: ${ventureName}`;
+
+            loadSales();
+        }
+        
+        function showReportScreen() {
+            if (sales.length === 0) {
+                if (confirm('Você precisa registrar pelo menos uma venda para gerar o relatório! Quer registrar uma agora?')) {
+                    showMainScreen();
+                }
+                return;
+            }
+
+            document.getElementById('mainScreen').style.display = 'none';
+            document.getElementById('reportScreen').style.display = 'flex'; 
+            
+            renderReport();
+        }
+
+       function logout() {
+            if (confirm('Tem certeza que deseja sair?')) {
+                currentUser = null;
+                sales = [];
+                localStorage.removeItem('user');
+                document.getElementById('mainScreen').style.display = 'none';
+                document.getElementById('reportScreen').style.display = 'none'; 
+                document.getElementById('authScreen').style.display = 'flex';
+                
+                // Resetar formulário de login
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('loginMessage').innerHTML = '';
+                
+                // Resetar botão de login
+                const btnLogin = document.getElementById('btnLogin');
+                btnLogin.disabled = false;
+                btnLogin.textContent = 'Entrar';
+                
+                // Resetar formulário de registro
+                document.getElementById('registerName').value = '';
+                document.getElementById('registerVenture').value = '';
+                document.getElementById('registerEmail').value = '';
+                document.getElementById('registerPassword').value = '';
+                document.getElementById('registerMessage').innerHTML = '';
+                
+                // Resetar botão de registro
+                const btnRegister = document.getElementById('btnRegister');
+                btnRegister.disabled = false;
+                btnRegister.textContent = 'Criar Conta';
+                
+                // Garantir que está na tela de login
+                showLogin();
+            }
+        }
+        
+        function toggleAvatarDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            dropdown.classList.toggle('active');
+        }
+
+        function calculateTotal() {
+            const quantity = parseFloat(document.getElementById('saleQuantity').value) || 0;
+            const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value) || 0;
+            const total = quantity * unitPrice;
+            document.getElementById('saleTotal').value = total.toFixed(2);
+        }
+
+        async function addSale() {
+            const date = document.getElementById('saleDate').value;
+            const product = document.getElementById('saleProduct').value;
+            const quantity = parseFloat(document.getElementById('saleQuantity').value);
+            const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value);
+            const total = parseFloat(document.getElementById('saleTotal').value);
+            const btn = document.getElementById('btnAddSale');
+
+            if (!date || !product || !quantity || !unitPrice) {
+                console.error('Por favor, preencha todos os campos!');
+                return;
+            }
+
+>>>>>>> 37a94c24497771acc128ce50cd390ae1ddf8e7ff
             btn.disabled = true;
             btn.textContent = "Cadastrando...";
 
