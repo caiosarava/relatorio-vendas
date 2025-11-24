@@ -200,15 +200,30 @@
             if(charts.top) charts.top.destroy();
             if(charts.time) charts.time.destroy();
 
-            // Top Produtos
-            const prodData = data.reduce((acc, s) => { acc[s.product] = (acc[s.product]||0)+1; return acc; }, {});
-            charts.top = new Chart(document.getElementById('topProductsChart'), {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(prodData),
-                    datasets: [{ label: 'Qtd', data: Object.values(prodData), backgroundColor: '#3498db' }]
-                }
-            });
+           // Top Produtos (Corrigido para somar Quantidade)
+const prodData = data.reduce((acc, s) => { 
+    // Garante que é número para somar corretamente
+    const qtd = parseFloat(s.quantity) || 0; 
+    acc[s.product] = (acc[s.product] || 0) + qtd; 
+    return acc; 
+}, {});
+
+// Ordena do maior para o menor e pega os Top 10
+const sortedProducts = Object.entries(prodData)
+    .sort((a, b) => b[1] - a[1]) // Ordena decrescente
+    .slice(0, 10); // Pega apenas os 10 primeiros
+
+charts.top = new Chart(document.getElementById('topProductsChart'), {
+    type: 'bar',
+    data: {
+        labels: sortedProducts.map(item => item[0]), // Nome do produto
+        datasets: [{ 
+            label: 'Quantidade Vendida', 
+            data: sortedProducts.map(item => item[1]), // Total somado
+            backgroundColor: '#3498db' 
+        }]
+    }
+});
 
             // Timeline
             const timeData = data.reduce((acc, s) => { 
