@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatório de Vendas</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script> 
     <style>
         /* MESMO CSS ORIGINAL */
@@ -203,6 +204,10 @@
                     <canvas id="productChart"></canvas>
                 </div>
                 <div class="chart-box">
+                    <h2>Unidades por Produto</h2>
+                    <canvas id="productQuantityChart"></canvas>
+                </div>
+                <div class="chart-box">
                     <h2>Total de Vendas Mensais (R$)</h2>
                     <canvas id="monthlyChart"></canvas>
                 </div>
@@ -229,33 +234,25 @@
 
     <script type="module">
         // --------------------------------------------------------------
-        // CONFIGURAÇÃO FIREBASE (SUBSTITUA PELOS SEUS DADOS!)
+        // CONFIGURAÇÃO SUPABASE (SUBSTITUA PELOS SEUS DADOS!)
         // --------------------------------------------------------------
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
+        const SUPABASE_URL = "https://excdrnjzwldleyzpdriv.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4Y2Rybmp6d2xkbGV5enBkcml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNTU4MTksImV4cCI6MjA3OTYzMTgxOX0.IC4aKCNFrGwv9XyR9c2k5YppqLDgM7Bnq_oiuJdapKA";
 
-        const firebaseConfig = {
-            apiKey: "SUA_API_KEY",
-            authDomain: "SEU_DOMINIO.firebaseapp.com",
-            projectId: "SEU_PROJECT_ID",
-            storageBucket: "SEU_BUCKET.appspot.com",
-            messagingSenderId: "SEU_ID",
-            appId: "SEU_APP_ID"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // --------------------------------------------------------------
         // CONFIGURAÇÃO GOOGLE SHEETS (Mantenha sua URL)
         // --------------------------------------------------------------
         const API_URL = 'https://script.google.com/macros/s/AKfycbxv1edh1yQhpNY2cERNJk12kmusHVbfDhxM1HuiZl6FhdacgeYBiXT9R0PD0CeisF-Y/exec';
 
-        let currentUser = null;
+        let currentUser = null; // Armazenará o objeto de perfil do usuário
         let sales = [];
         let editingId = null;
         let productChartInstance = null;
         let monthlyChartInstance = null;
+        let productQuantityChartInstance = null;
 
         // Funções globais para o HTML acessar
         window.showRegister = () => {
@@ -286,23 +283,15 @@
             btn.innerHTML = '<span class="loading"></span> Entrando...';
 
             try {
-                // Busca usuário no Firestore
-                const q = query(collection(db, "users"), where("email", "==", email), where("password", "==", password));
-                const querySnapshot = await getDocs(q);
-
-                if (!querySnapshot.empty) {
-                    currentUser = querySnapshot.docs[0].data();
-                    localStorage.setItem('user_session', JSON.stringify(currentUser)); // Sessão simples
-                    showMainScreen();
-                } else {
-                    msgDiv.innerHTML = '<div class="error">Email ou senha incorretos.</div>';
-                }
+                const { data, error } = await db.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                // onAuthStateChange irá lidar com a exibição da tela principal
             } catch (e) {
                 console.error(e);
-                msgDiv.innerHTML = '<div class="error">Erro de conexão.</div>';
+                msgDiv.innerHTML = `<div class="error">${e.message || 'Erro de conexão.'}</div>`;
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'Entrar';
+                btn.innerHTML = 'Entrar';
             }
         };
 
@@ -319,22 +308,37 @@
             btn.textContent = "Cadastrando...";
 
             try {
-                // Verifica se já existe
-                const q = query(collection(db, "users"), where("email", "==", email));
-                const snapshot = await getDocs(q);
-                if (!snapshot.empty) throw new Error("Email já cadastrado.");
+                // 1. Cria o usuário no Supabase Auth
+                const { data: authData, error: authError } = await db.auth.signUp({ 
+                    email, 
+                    password,
+                    options: {
+                        data: { 
+                            full_name: name,
+                            venture_name: ventureName
+                        }
+                    }
+                });
+                if (authError) throw authError;
 
-                // Salva no Firebase
-                await addDoc(collection(db, "users"), { name, ventureName, email, password });
+                // 2. Insere os dados de perfil na tabela 'profiles' (opcional, mas recomendado)
+                // Supabase pode fazer isso automaticamente com Triggers. Assumindo que não há trigger:
+                const { error: profileError } = await db.from('profiles').insert({
+                    id: authData.user.id,
+                    name: name,
+                    venture_name: ventureName,
+                    email: email
+                });
+                if (profileError) throw profileError;
                 
-                // Registra na Planilha (Backup)
+                // 3. Registra na Planilha (Backup)
                 fetch(API_URL, {
                     method: 'POST', mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'register', name, ventureName, email })
                 });
 
-                alert("Conta criada com sucesso!");
+                alert("Conta criada com sucesso! Faça o login.");
                 showLogin();
             } catch (e) {
                 alert(e.message);
@@ -344,36 +348,51 @@
             }
         };
 
-        window.showMainScreen = () => {
+        window.showMainScreen = async () => {
+            // Pega a sessão atual para garantir que temos o usuário mais recente
+            const { data: { session }, error: sessionError } = await db.auth.getSession();
+            if (sessionError || !session) {
+                console.error("Nenhuma sessão encontrada, fazendo logout.");
+                return logout();
+            }
+            const user = session.user;
+
+            // Busca o perfil do usuário na tabela 'profiles'
+            const { data: profile, error } = await db.from('profiles').select('*').eq('id', user.id).single();
+            if (error) {
+                console.error("Erro ao buscar perfil:", error);
+                return logout();
+            }
+            currentUser = profile;
+
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('mainScreen').style.display = 'flex';
             document.getElementById('reportScreen').style.display = 'none';
             
             document.getElementById('userAvatar').textContent = currentUser.name[0].toUpperCase();
             document.getElementById('reportAvatar').textContent = currentUser.name[0].toUpperCase();
-            document.getElementById('mainTitle').innerHTML = `✍️ ${currentUser.ventureName || currentUser.name}`;
+            document.getElementById('mainTitle').innerHTML = `✍️ ${currentUser.venture_name || currentUser.name}`;
             
-            // Configura data de hoje
             document.getElementById('saleDate').valueAsDate = new Date();
             
-            loadSales();
+            await loadSales();
         };
 
         window.loadSales = async () => {
+            if (!currentUser) return;
             const container = document.getElementById('salesContainer');
             container.innerHTML = '<div style="text-align:center; padding:20px;"><div class="loading" style="border-color:#667eea; border-top-color:transparent;"></div> Carregando vendas...</div>';
-            sales = [];
-
+            
             try {
-                const q = query(collection(db, "sales"), where("userEmail", "==", currentUser.email));
-                const querySnapshot = await getDocs(q);
+                const { data, error } = await db
+                    .from('sales')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('date', { ascending: false });
+
+                if (error) throw error;
                 
-                querySnapshot.forEach((doc) => {
-                    sales.push({ ...doc.data(), firestoreId: doc.id });
-                });
-                
-                // Ordenar por data decrescente
-                sales.sort((a, b) => new Date(b.date) - new Date(a.date));
+                sales = data || [];
                 displaySales();
             } catch (e) {
                 console.error(e);
@@ -393,14 +412,14 @@
                     <div class="sale-header">
                         <div class="sale-date">📅 ${new Date(sale.date + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
                         <div class="sale-actions">
-                            <button class="btn-small btn-edit" onclick="editSale('${sale.firestoreId}')">✏️ Editar</button>
-                            <button class="btn-small btn-delete" onclick="deleteSale('${sale.firestoreId}')">🗑️ Excluir</button>
+                            <button class="btn-small btn-edit" onclick="editSale('${sale.id}')">✏️ Editar</button>
+                            <button class="btn-small btn-delete" onclick="deleteSale('${sale.id}')">🗑️ Excluir</button>
                         </div>
                     </div>
                     <div class="sale-details">
                         <div class="sale-detail"><div class="sale-detail-label">Produto</div><strong>${sale.product}</strong></div>
                         <div class="sale-detail"><div class="sale-detail-label">Qtd</div>${sale.quantity}</div>
-                        <div class="sale-detail"><div class="sale-detail-label">Valor</div>R$ ${parseFloat(sale.unitPrice).toFixed(2)}</div>
+                        <div class="sale-detail"><div class="sale-detail-label">Valor</div>R$ ${parseFloat(sale.unit_price).toFixed(2)}</div>
                         <div class="sale-detail"><div class="sale-detail-label">Total</div><span class="total-value">R$ ${parseFloat(sale.total).toFixed(2)}</span></div>
                     </div>
                 </div>
@@ -420,57 +439,69 @@
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span> Salvando...';
 
-            const saleData = {
-                date, product, quantity, unitPrice, total,
-                userEmail: currentUser.email,
-                userName: currentUser.name,
-                ventureName: currentUser.ventureName
+            // Objeto de dados para o Supabase (apenas colunas que existem na tabela 'sales')
+            const supabaseSaleData = {
+                date, product, quantity, 
+                unit_price: unitPrice, 
+                total,
+                user_id: currentUser.id
+            };
+
+            // Objeto de dados completo para o Google Sheets
+            const googleSheetsSaleData = {
+                ...supabaseSaleData,
+                userName: currentUser.name, 
+                ventureName: currentUser.venture_name,
+                userEmail: currentUser.email
             };
 
             try {
                 if (editingId) {
                     // Atualizar
-                    await updateDoc(doc(db, "sales", editingId), saleData);
-                    editingId = null;
-                    document.getElementById('btnAddText').textContent = '➕ Adicionar Venda';
+                    const { error } = await db.from('sales').update(supabaseSaleData).eq('id', editingId);
+                    if (error) throw error;
                 } else {
                     // Criar novo
-                    await addDoc(collection(db, "sales"), saleData);
-                    
-                    // Envia para Planilha Google (Sincronização em segundo plano)
-                    fetch(API_URL, {
-                        method: 'POST', mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'saveSale', ...saleData })
-                    }).catch(err => console.log("Erro planilha", err));
+                    const { error } = await db.from('sales').insert([supabaseSaleData]);
+                    if (error) throw error;
                 }
+                
+                editingId = null;
+
+                // Envia para Planilha Google (Sincronização em segundo plano)
+                fetch(API_URL, {
+                    method: 'POST', mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'saveSale', ...googleSheetsSaleData })
+                }).catch(err => console.log("Erro planilha", err));
 
                 window.clearForm();
-                loadSales();
+                await loadSales();
             } catch (e) {
-                console.error(e);
-                alert("Erro ao salvar venda.");
+                console.error("Supabase Error:", e);
+                alert(`Erro ao salvar venda: ${e.message}`);
             } finally {
                 btn.disabled = false;
-                if(!editingId) btn.innerHTML = '<span id="btnAddText">➕ Adicionar Venda</span>';
+                btn.innerHTML = '<span id="btnAddText">➕ Adicionar Venda</span>';
             }
         };
 
         window.deleteSale = async (id) => {
             if(!confirm("Tem certeza?")) return;
             try {
-                await deleteDoc(doc(db, "sales", id));
-                loadSales();
+                const { error } = await db.from('sales').delete().eq('id', id);
+                if (error) throw error;
+                await loadSales();
             } catch (e) { alert("Erro ao excluir."); }
         };
 
         window.editSale = (id) => {
-            const sale = sales.find(s => s.firestoreId === id);
+            const sale = sales.find(s => s.id === id);
             if(!sale) return;
             document.getElementById('saleDate').value = sale.date;
             document.getElementById('saleProduct').value = sale.product;
             document.getElementById('saleQuantity').value = sale.quantity;
-            document.getElementById('saleUnitPrice').value = sale.unitPrice;
+            document.getElementById('saleUnitPrice').value = sale.unit_price;
             document.getElementById('saleTotal').value = sale.total;
             editingId = id;
             document.getElementById('btnAddText').textContent = '💾 Salvar Alterações';
@@ -480,27 +511,28 @@
         window.clearForm = () => {
             document.getElementById('saleProduct').value = '';
             document.getElementById('saleQuantity').value = 1;
+            document.getElementById('saleUnitPrice').value = '';
             document.getElementById('saleTotal').value = '';
             editingId = null;
         };
 
-        window.logout = () => {
-            localStorage.removeItem('user_session');
+        window.logout = async () => {
+            await db.auth.signOut();
             window.location.reload();
         };
         
         // --- LÓGICA DE RELATÓRIO ---
-
-        window.showReportScreen = () => {
+        window.showReportScreen = async () => {
             document.getElementById('mainScreen').style.display = 'none';
             document.getElementById('reportScreen').style.display = 'flex';
+            await loadSales(); // Garante que os dados estão atualizados
             renderReport();
         };
 
         window.renderReport = () => {
-            // Lógica simplificada de gráficos
             if (productChartInstance) productChartInstance.destroy();
             if (monthlyChartInstance) monthlyChartInstance.destroy();
+            if (productQuantityChartInstance) productQuantityChartInstance.destroy();
 
             const totalRev = sales.reduce((acc, s) => acc + parseFloat(s.total), 0);
             
@@ -509,24 +541,37 @@
                 <div class="card total-sales"><div class="card-title">Vendas</div><div class="card-value">${sales.length}</div></div>
             `;
 
-            // Tabela
             document.getElementById('salesTableBody').innerHTML = sales.map(s => `
                 <tr>
                     <td>${new Date(s.date+'T00:00:00').toLocaleDateString('pt-BR')}</td>
                     <td>${s.product}</td>
                     <td>${s.quantity}</td>
-                    <td>R$ ${parseFloat(s.unitPrice).toFixed(2)}</td>
+                    <td>R$ ${parseFloat(s.unit_price).toFixed(2)}</td>
                     <td>R$ ${parseFloat(s.total).toFixed(2)}</td>
                 </tr>
             `).join('');
 
-            // Gráfico Produtos
+            // Gráfico Produtos (Receita)
             const prodData = sales.reduce((acc, s) => { acc[s.product] = (acc[s.product]||0) + parseFloat(s.total); return acc; }, {});
             productChartInstance = new Chart(document.getElementById('productChart'), {
                 type: 'bar',
                 data: {
                     labels: Object.keys(prodData),
                     datasets: [{ label: 'Receita (R$)', data: Object.values(prodData), backgroundColor: '#667eea' }]
+                }
+            });
+
+            // Gráfico Produtos (Quantidade)
+            const quantityData = sales.reduce((acc, s) => { 
+                const quantity = parseInt(s.quantity, 10) || 0;
+                acc[s.product] = (acc[s.product] || 0) + quantity;
+                return acc; 
+            }, {});
+            productQuantityChartInstance = new Chart(document.getElementById('productQuantityChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(quantityData),
+                    datasets: [{ label: 'Unidades Vendidas', data: Object.values(quantityData), backgroundColor: '#f39c12' }]
                 }
             });
 
@@ -554,12 +599,18 @@
             }
         });
 
-        // Init
-        const session = localStorage.getItem('user_session');
-        if(session) {
-            currentUser = JSON.parse(session);
-            showMainScreen();
-        }
+        // --- INICIALIZAÇÃO E SESSÃO ---
+        db.auth.onAuthStateChange((event, session) => {
+            if (session?.user) {
+                showMainScreen(); // Não precisa mais passar o usuário, a função busca a sessão
+            } else {
+                // Redireciona para tela de login se não houver sessão
+                document.getElementById('authScreen').style.display = 'block';
+                document.getElementById('mainScreen').style.display = 'none';
+                document.getElementById('reportScreen').style.display = 'none';
+                currentUser = null;
+            }
+        });
     </script>
 </body>
 </html>

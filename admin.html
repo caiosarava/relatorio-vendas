@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <style>
         /* MESMO CSS DO ORIGINAL - MANTIDO PARA COMPATIBILIDADE VISUAL */
@@ -46,8 +47,8 @@
     <div id="authScreen" class="container">
         <div class="auth-container">
             <h1>🔐 Admin Dashboard</h1>
-            <p>Acesso restrito (Dados Firebase)</p>
-            <div class="form-group"><label>Usuário</label><input type="text" id="adminUser" placeholder="admin"></div>
+            <p>Acesso restrito</p>
+            <div class="form-group"><label>Email</label><input type="email" id="adminUser" placeholder="seu@email.com"></div>
             <div class="form-group"><label>Senha</label><input type="password" id="adminPass" placeholder="••••••"></div>
             <button class="btn btn-primary" onclick="adminLogin()" id="btnLogin">Entrar</button>
             <div id="loginMessage"></div>
@@ -79,7 +80,7 @@
                     <div class="stat-label">Receita Total</div><div class="stat-value" id="totalRevenue">R$ 0,00</div>
                 </div>
                 <div class="stat-card users">
-                    <div class="stat-label">Usuários Ativos</div><div class="stat-value" id="totalUsers">0</div>
+                    <div class="stat-label">Total de Usuários</div><div class="stat-value" id="totalUsers">0</div>
                 </div>
                 <div class="stat-card products">
                     <div class="stat-label">Total Vendas</div><div class="stat-value" id="totalSales">0</div>
@@ -102,61 +103,82 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
+        // --------------------------------------------------------------
+        // CONFIGURAÇÃO SUPABASE (COPIE OS MESMOS DADOS DO INDEX.HTML)
+        // --------------------------------------------------------------
+        const SUPABASE_URL = "https://excdrnjzwldleyzpdriv.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4Y2Rybmp6d2xkbGV5enBkcml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNTU4MTksImV4cCI6MjA3OTYzMTgxOX0.IC4aKCNFrGwv9XyR9c2k5YppqLDgM7Bnq_oiuJdapKA";
 
-        // --- MESMA CONFIG DO INDEX.HTML ---
-        const firebaseConfig = {
-            apiKey: "SUA_API_KEY",
-            authDomain: "SEU_DOMINIO.firebaseapp.com",
-            projectId: "SEU_PROJECT_ID",
-            storageBucket: "SEU_BUCKET.appspot.com",
-            messagingSenderId: "SEU_ID",
-            appId: "SEU_APP_ID"
-        };
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        // Login Simples
-        const CREDENTIALS = { user: 'daes', pass: 'olimpicodaes1' };
+        // Login Simples (MANTIDO POR SIMPLICIDADE, O IDEAL SERIA USAR RBAC DO SUPABASE)
+        const CREDENTIALS = { user: 'daes.ecosol@gmail.com', pass: 'olimpicodaes1' };
         
-        let allData = [];
+        let allData = { sales: [], users: [] };
         let charts = {};
 
-        window.adminLogin = () => {
-            const u = document.getElementById('adminUser').value;
-            const p = document.getElementById('adminPass').value;
-            if(u === CREDENTIALS.user && p === CREDENTIALS.pass) {
+        window.adminLogin = async () => {
+            const email = document.getElementById('adminUser').value;
+            const password = document.getElementById('adminPass').value;
+            const msgDiv = document.getElementById('loginMessage');
+            const btn = document.getElementById('btnLogin');
+
+            if (!email || !password) return msgDiv.innerHTML = '<div class="error">Preencha os campos!</div>';
+
+            btn.disabled = true;
+            btn.innerHTML = '<span>Entrando...</span>';
+
+            try {
+                // Autentica com o Supabase
+                const { error } = await db.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                
+                // Se o login for bem-sucedido, mostra o dashboard
                 document.getElementById('authScreen').style.display = 'none';
                 document.getElementById('dashboardScreen').style.display = 'block';
                 loadDashboardData();
-            } else {
-                document.getElementById('loginMessage').innerHTML = '<div class="error">Erro!</div>';
+
+            } catch (e) {
+                console.error(e);
+                msgDiv.innerHTML = `<div class="error">${e.message || 'Erro de conexão.'}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Entrar';
             }
         };
 
-        window.adminLogout = () => window.location.reload();
+        window.adminLogout = async () => {
+            await db.auth.signOut();
+            window.location.reload();
+        };
 
         window.loadDashboardData = async () => {
             const btn = document.querySelector('.refresh-btn');
             btn.textContent = '⏳ ...';
-            allData = [];
             
             try {
-                const snapshot = await getDocs(collection(db, "sales"));
-                snapshot.forEach(doc => allData.push(doc.data()));
+                // Usando Promise.all para buscar dados em paralelo
+                const [{ data: salesData, error: salesError }, { data: usersData, error: usersError }] = await Promise.all([
+                    db.from('sales').select('*, profiles(name, email)'), // Junta sales com profiles
+                    db.from('profiles').select('*') // Busca todos os perfis de usuário
+                ]);
+
+                if (salesError) throw salesError;
+                if (usersError) throw usersError;
+
+                allData.sales = salesData || [];
+                allData.users = usersData || [];
                 
                 // Popula Filtro de Usuários
-                const users = [...new Set(allData.map(s => s.userEmail))];
                 const select = document.getElementById('filterUser');
                 select.innerHTML = '<option value="">Todos</option>' + 
-                    users.map(u => `<option value="${u}">${u}</option>`).join('');
+                    allData.users.map(u => `<option value="${u.id}">${u.name || u.email}</option>`).join('');
                 
                 applyFilters();
             } catch (e) {
                 console.error(e);
-                alert("Erro ao baixar dados do Firebase.");
+                alert("Erro ao baixar dados do Supabase.");
             } finally {
                 btn.textContent = '🔄 Atualizar';
             }
@@ -165,12 +187,12 @@
         window.applyFilters = () => {
             const start = document.getElementById('filterStartDate').value;
             const end = document.getElementById('filterEndDate').value;
-            const user = document.getElementById('filterUser').value;
+            const userId = document.getElementById('filterUser').value;
 
-            const filtered = allData.filter(s => {
+            const filtered = allData.sales.filter(s => {
                 if (start && s.date < start) return false;
                 if (end && s.date > end) return false;
-                if (user && s.userEmail !== user) return false;
+                if (userId && s.user_id !== userId) return false;
                 return true;
             });
 
@@ -182,48 +204,41 @@
             const totalRev = data.reduce((a, b) => a + parseFloat(b.total), 0);
             document.getElementById('totalRevenue').textContent = `R$ ${totalRev.toFixed(2)}`;
             document.getElementById('totalSales').textContent = data.length;
-            document.getElementById('totalUsers').textContent = new Set(data.map(s=>s.userEmail)).size;
+            document.getElementById('totalUsers').textContent = allData.users.length; // Usa o total de usuários cadastrados
 
             // Tabela
             const tbody = document.getElementById('allSalesTableBody');
-            tbody.innerHTML = data.sort((a,b) => b.date.localeCompare(a.date)).slice(0, 100).map(s => `
-                <tr>
-                    <td>${s.date}</td>
-                    <td>${s.userName || s.userEmail}</td>
-                    <td>${s.product}</td>
-                    <td>${s.quantity}</td>
-                    <td>R$ ${parseFloat(s.total).toFixed(2)}</td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = data
+                .sort((a,b) => b.date.localeCompare(a.date))
+                .map(s => `
+                    <tr>
+                        <td>${new Date(s.date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                        <td>${s.profiles?.name || s.profiles?.email || 'Usuário Deletado'}</td>
+                        <td>${s.product}</td>
+                        <td>${s.quantity}</td>
+                        <td>R$ ${parseFloat(s.total).toFixed(2)}</td>
+                    </tr>
+                `).join('');
 
             // Gráficos
             if(charts.top) charts.top.destroy();
             if(charts.time) charts.time.destroy();
 
-           // Top Produtos (Corrigido para somar Quantidade)
-const prodData = data.reduce((acc, s) => { 
-    // Garante que é número para somar corretamente
-    const qtd = parseFloat(s.quantity) || 0; 
-    acc[s.product] = (acc[s.product] || 0) + qtd; 
-    return acc; 
-}, {});
+            // Top Produtos
+            const prodData = data.reduce((acc, s) => { 
+                const qtd = parseFloat(s.quantity) || 0; 
+                acc[s.product] = (acc[s.product] || 0) + qtd; 
+                return acc; 
+            }, {});
+            const sortedProducts = Object.entries(prodData).sort((a, b) => b[1] - a[1]).slice(0, 10);
 
-// Ordena do maior para o menor e pega os Top 10
-const sortedProducts = Object.entries(prodData)
-    .sort((a, b) => b[1] - a[1]) // Ordena decrescente
-    .slice(0, 10); // Pega apenas os 10 primeiros
-
-charts.top = new Chart(document.getElementById('topProductsChart'), {
-    type: 'bar',
-    data: {
-        labels: sortedProducts.map(item => item[0]), // Nome do produto
-        datasets: [{ 
-            label: 'Quantidade Vendida', 
-            data: sortedProducts.map(item => item[1]), // Total somado
-            backgroundColor: '#3498db' 
-        }]
-    }
-});
+            charts.top = new Chart(document.getElementById('topProductsChart'), {
+                type: 'bar',
+                data: {
+                    labels: sortedProducts.map(item => item[0]),
+                    datasets: [{ label: 'Quantidade Vendida', data: sortedProducts.map(item => item[1]), backgroundColor: '#3498db' }]
+                }
+            });
 
             // Timeline
             const timeData = data.reduce((acc, s) => { 
