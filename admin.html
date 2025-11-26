@@ -90,6 +90,7 @@
             <div class="charts-grid">
                 <div class="chart-box"><h2>Top Produtos</h2><canvas id="topProductsChart"></canvas></div>
                 <div class="chart-box"><h2>Receita no Tempo</h2><canvas id="timelineChart"></canvas></div>
+                <div class="chart-box"><h2>Vendas por Empreendimento</h2><canvas id="salesByGroupChart"></canvas></div>
             </div>
 
             <div class="table-container">
@@ -160,7 +161,7 @@
             try {
                 // Usando Promise.all para buscar dados em paralelo
                 const [{ data: salesData, error: salesError }, { data: usersData, error: usersError }] = await Promise.all([
-                    db.from('sales').select('*, profiles(name, email)'), // Junta sales com profiles
+                    db.from('sales').select('*, profiles(name, email, venture_name)'), // Junta sales com profiles
                     db.from('profiles').select('*') // Busca todos os perfis de usuário
                 ]);
 
@@ -223,6 +224,7 @@
             // Gráficos
             if(charts.top) charts.top.destroy();
             if(charts.time) charts.time.destroy();
+            if(charts.salesByGroup) charts.salesByGroup.destroy();
 
             // Top Produtos
             const prodData = data.reduce((acc, s) => { 
@@ -253,6 +255,38 @@
                 data: {
                     labels: sortedKeys,
                     datasets: [{ label: 'Receita', data: sortedKeys.map(k=>timeData[k]), borderColor: '#27ae60', tension: 0.4 }]
+                }
+            });
+
+            // Vendas por Empreendimento
+            const salesByGroupData = data.reduce((acc, sale) => {
+                const month = sale.date.substring(0, 7);
+                const group = sale.profiles?.venture_name || sale.profiles?.name || sale.profiles?.email || 'Desconhecido';
+                const total = parseFloat(sale.total);
+
+                if (!acc[month]) acc[month] = {};
+                if (!acc[month][group]) acc[month][group] = 0;
+                
+                acc[month][group] += total;
+                return acc;
+            }, {});
+
+            const months = Object.keys(salesByGroupData).sort();
+            const groups = [...new Set(data.map(s => s.profiles?.venture_name || s.profiles?.name || s.profiles?.email || 'Desconhecido'))];
+            const backgroundColors = ['#2980b9', '#c0392b', '#27ae60', '#f39c12', '#8e44ad', '#2c3e50', '#16a085', '#d35400'];
+
+            const datasets = groups.map((group, i) => ({
+                label: group,
+                data: months.map(month => salesByGroupData[month][group] || 0),
+                backgroundColor: backgroundColors[i % backgroundColors.length]
+            }));
+
+            charts.salesByGroup = new Chart(document.getElementById('salesByGroupChart'), {
+                type: 'bar',
+                data: { labels: months, datasets: datasets },
+                options: {
+                    responsive: true,
+                    scales: { x: { stacked: true }, y: { stacked: true } }
                 }
             });
         }
