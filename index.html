@@ -161,8 +161,19 @@
                         <input type="text" id="saleTotal" readonly style="background: #e8f5e9; font-weight: 600; color: #27ae60;">
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="paymentMethod">Meio de Pagamento</label>
+                        <select id="paymentMethod" class="form-control" style="width: 100%; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1em;">
+                            <option value="pix">PIX</option>
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="debito">Cartão de Débito</option>
+                            <option value="credito">Cartão de Crédito</option>
+                        </select>
+                    </div>
+                </div>
                 <button class="btn btn-primary" onclick="addSale()" id="btnAddSale">
-                    <span id="btnAddText">➕ Adicionar Venda</span>
+                    ➕ Adicionar Venda
                 </button>
             </div>
 
@@ -198,6 +209,10 @@
                     <h2>Total de Vendas Mensais (R$)</h2>
                     <canvas id="monthlyChart"></canvas>
                 </div>
+                <div class="chart-box">
+                    <h2>Meios de Pagamento</h2>
+                    <canvas id="paymentMethodChart"></canvas>
+                </div>
             </div>
             <div class="data-table-container">
                 <h2>Detalhe de Todas as Vendas</h2>
@@ -209,6 +224,7 @@
                             <th>Quantidade</th>
                             <th>Valor Unitário (R$)</th>
                             <th>Total (R$)</th>
+                            <th>Meio de Pagamento</th>
                         </tr>
                     </thead>
                     <tbody id="salesTableBody">
@@ -240,6 +256,7 @@
         let productChartInstance = null;
         let monthlyChartInstance = null;
         let productQuantityChartInstance = null;
+        let paymentMethodChartInstance = null;
 
         // Funções globais para o HTML acessar
         window.showRegister = () => {
@@ -408,10 +425,12 @@
                         <div class="sale-detail"><div class="sale-detail-label">Qtd</div>${sale.quantity}</div>
                         <div class="sale-detail"><div class="sale-detail-label">Valor</div>R$ ${parseFloat(sale.unit_price).toFixed(2)}</div>
                         <div class="sale-detail"><div class="sale-detail-label">Total</div><span class="total-value">R$ ${parseFloat(sale.total).toFixed(2)}</span></div>
+                        <div class="sale-detail"><div class="sale-detail-label">Pagamento</div><strong>${sale.payment_methods && sale.payment_methods.includes('cartao') ? (sale.card_type === 'debito' ? 'Débito' : 'Crédito') : sale.payment_methods ? sale.payment_methods[0] : 'N/A'}</strong></div>
                     </div>
                 </div>
             `).join('');
         };
+
 
         window.addSale = async () => {
             const date = document.getElementById('saleDate').value;
@@ -419,47 +438,62 @@
             const quantity = parseFloat(document.getElementById('saleQuantity').value);
             const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value);
             const total = quantity * unitPrice;
+            const paymentMethod = document.getElementById('paymentMethod').value;
 
-            if (!date || !product || !quantity) return alert("Preencha tudo!");
+            if (!date || !product || !quantity || !paymentMethod) {
+                alert("Preencha todos os campos, incluindo o meio de pagamento!");
+                return;
+            }
 
             const btn = document.getElementById('btnAddSale');
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span> Salvando...';
 
-            // Objeto de dados para o Supabase (apenas colunas que existem na tabela 'sales')
+
+            let payment_methods = [];
+            let card_type = null;
+
+            if (paymentMethod === 'pix' || paymentMethod === 'dinheiro') {
+                payment_methods.push(paymentMethod);
+            } else if (paymentMethod === 'debito' || paymentMethod === 'credito') {
+                payment_methods.push('cartao');
+                card_type = paymentMethod;
+            }
+
             const supabaseSaleData = {
-                date, product, quantity, 
-                unit_price: unitPrice, 
+                date,
+                product,
+                quantity,
+                unit_price: unitPrice,
                 total,
                 user_id: currentUser.id,
                 username: currentUser.name,
-                venturename: currentUser.venture_name
+                venturename: currentUser.venture_name,
+                payment_methods,
+                card_type
             };
 
-            // Objeto de dados completo para o Google Sheets
             const googleSheetsSaleData = {
                 ...supabaseSaleData,
-                userName: currentUser.name, 
+                userName: currentUser.name,
                 ventureName: currentUser.venture_name,
                 userEmail: currentUser.email
             };
 
             try {
                 if (editingId) {
-                    // Atualizar
                     const { error } = await db.from('sales').update(supabaseSaleData).eq('id', editingId);
                     if (error) throw error;
                 } else {
-                    // Criar novo
                     const { error } = await db.from('sales').insert([supabaseSaleData]);
                     if (error) throw error;
                 }
-                
+
                 editingId = null;
 
-                // Envia para Planilha Google (Sincronização em segundo plano)
                 fetch(API_URL, {
-                    method: 'POST', mode: 'no-cors',
+                    method: 'POST',
+                    mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'saveSale', ...googleSheetsSaleData })
                 }).catch(err => console.log("Erro planilha", err));
@@ -492,8 +526,22 @@
             document.getElementById('saleQuantity').value = sale.quantity;
             document.getElementById('saleUnitPrice').value = sale.unit_price;
             document.getElementById('saleTotal').value = sale.total;
+            window.calculateTotal(); // Chamar para atualizar o total ao editar
+
+            let paymentMethodValue = 'pix'; // Default to pix if no payment method found or recognized
+            if (sale.payment_methods && Array.isArray(sale.payment_methods) && sale.payment_methods.length > 0) {
+                if (sale.payment_methods.includes('cartao') && sale.card_type) {
+                    paymentMethodValue = sale.card_type;
+                } else if (sale.payment_methods.includes('pix')) {
+                    paymentMethodValue = 'pix';
+                } else if (sale.payment_methods.includes('dinheiro')) {
+                    paymentMethodValue = 'dinheiro';
+                }
+            }
+            document.getElementById('paymentMethod').value = paymentMethodValue;
+
             editingId = id;
-            document.getElementById('btnAddText').textContent = '💾 Salvar Alterações';
+            document.getElementById('btnAddSale').textContent = '💾 Salvar Alterações';
             window.scrollTo({top:0, behavior:'smooth'});
         };
 
@@ -502,7 +550,9 @@
             document.getElementById('saleQuantity').value = 1;
             document.getElementById('saleUnitPrice').value = '';
             document.getElementById('saleTotal').value = '';
+            document.getElementById('paymentMethod').value = 'pix'; // Reset to default value
             editingId = null;
+            document.getElementById('btnAddSale').textContent = '➕ Adicionar Venda'; // Reset button text
         };
 
         window.logout = async () => {
@@ -522,6 +572,7 @@
             if (productChartInstance) productChartInstance.destroy();
             if (monthlyChartInstance) monthlyChartInstance.destroy();
             if (productQuantityChartInstance) productQuantityChartInstance.destroy();
+            if (paymentMethodChartInstance) paymentMethodChartInstance.destroy();
 
             const totalRev = sales.reduce((acc, s) => acc + parseFloat(s.total), 0);
             
@@ -537,6 +588,7 @@
                     <td>${s.quantity}</td>
                     <td>R$ ${parseFloat(s.unit_price).toFixed(2)}</td>
                     <td>R$ ${parseFloat(s.total).toFixed(2)}</td>
+                    <td>${s.payment_methods && s.payment_methods.includes('cartao') ? (s.card_type === 'debito' ? 'Cartão de Débito' : 'Cartão de Crédito') : s.payment_methods ? s.payment_methods[0] : 'N/A'}</td>
                 </tr>
             `).join('');
 
@@ -575,6 +627,40 @@
                 data: {
                     labels: Object.keys(monthData).sort(),
                     datasets: [{ label: 'Total (R$)', data: Object.keys(monthData).sort().map(k=>monthData[k]), borderColor: '#27ae60', fill: true }]
+                }
+            });
+
+            // Gráfico Meios de Pagamento
+            const paymentData = sales.reduce((acc, sale) => {
+                let method = 'N/A';
+                if (sale.payment_methods && sale.payment_methods.length > 0) {
+                    if (sale.payment_methods.includes('cartao')) {
+                        method = sale.card_type === 'debito' ? 'Cartão de Débito' : 'Cartão de Crédito';
+                    } else {
+                        method = sale.payment_methods[0];
+                    }
+                }
+                acc[method] = (acc[method] || 0) + 1;
+                return acc;
+            }, {});
+
+            paymentMethodChartInstance = new Chart(document.getElementById('paymentMethodChart'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(paymentData),
+                    datasets: [{
+                        label: 'Número de Vendas',
+                        data: Object.values(paymentData),
+                        backgroundColor: ['#667eea', '#764ba2', '#3498db', '#2980b9', '#e74c3c']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
                 }
             });
         };

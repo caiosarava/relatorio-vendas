@@ -91,6 +91,7 @@
                 <div class="chart-box"><h2>Top Produtos</h2><canvas id="topProductsChart"></canvas></div>
                 <div class="chart-box"><h2>Receita no Tempo</h2><canvas id="timelineChart"></canvas></div>
                 <div class="chart-box"><h2>Vendas por Empreendimento</h2><canvas id="salesByGroupChart"></canvas></div>
+                <div class="chart-box"><h2>Métodos de Pagamento</h2><canvas id="paymentMethodsChart"></canvas></div>
             </div>
 
             <div class="table-container">
@@ -225,6 +226,7 @@
             if(charts.top) charts.top.destroy();
             if(charts.time) charts.time.destroy();
             if(charts.salesByGroup) charts.salesByGroup.destroy();
+            if(charts.payment) charts.payment.destroy();
 
             // Top Produtos
             const prodData = data.reduce((acc, s) => { 
@@ -287,6 +289,40 @@
                 options: {
                     responsive: true,
                     scales: { x: { stacked: true }, y: { stacked: true } }
+                }
+            });
+
+            // Gráfico de Métodos de Pagamento
+            const paymentData = data.reduce((acc, sale) => {
+                if (sale.payment_methods) {
+                    sale.payment_methods.forEach(method => {
+                        acc[method] = (acc[method] || 0) + 1;
+                    });
+                }
+                if (sale.card_type) {
+                    const cardLabel = `Cartão (${sale.card_type})`;
+                    acc[cardLabel] = (acc[cardLabel] || 0) + 1;
+                }
+                return acc;
+            }, {});
+
+            charts.payment = new Chart(document.getElementById('paymentMethodsChart'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(paymentData),
+                    datasets: [{
+                        label: 'Número de Vendas',
+                        data: Object.values(paymentData),
+                        backgroundColor: ['#667eea', '#764ba2', '#3498db', '#2980b9', '#e74c3c']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
                 }
             });
         }
