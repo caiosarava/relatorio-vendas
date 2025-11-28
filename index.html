@@ -181,7 +181,7 @@
                 <h2>📋 Lista de Vendas</h2>
                 <div id="salesContainer"></div>
             </div>
-            </div>
+        </div>
     </div>
     
     <div id="reportScreen" class="container report-screen">
@@ -228,7 +228,7 @@
                         </tr>
                     </thead>
                     <tbody id="salesTableBody">
-                        <tr><td colspan="5" style="text-align: center;">Carregando dados...</td></tr>
+                        <tr><td colspan="6" style="text-align: center;">Carregando dados...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -250,7 +250,7 @@
         // --------------------------------------------------------------
         const API_URL = 'https://script.google.com/macros/s/AKfycbxv1edh1yQhpNY2cERNJk12kmusHVbfDhxM1HuiZl6FhdacgeYBiXT9R0PD0CeisF-Y/exec';
 
-        let currentUser = null; // Armazenará o objeto de perfil do usuário
+        let currentUser = null;
         let sales = [];
         let editingId = null;
         let productChartInstance = null;
@@ -289,7 +289,6 @@
             try {
                 const { data, error } = await db.auth.signInWithPassword({ email, password });
                 if (error) throw error;
-                // onAuthStateChange irá lidar com a exibição da tela principal
             } catch (e) {
                 console.error(e);
                 msgDiv.innerHTML = `<div class="error">${e.message || 'Erro de conexão.'}</div>`;
@@ -312,7 +311,6 @@
             btn.textContent = "Cadastrando...";
 
             try {
-                // 1. Cria o usuário no Supabase Auth
                 const { data: authData, error: authError } = await db.auth.signUp({ 
                     email, 
                     password,
@@ -325,8 +323,6 @@
                 });
                 if (authError) throw authError;
 
-                // 2. Insere os dados de perfil na tabela 'profiles' (opcional, mas recomendado)
-                // Supabase pode fazer isso automaticamente com Triggers. Assumindo que não há trigger:
                 const { error: profileError } = await db.from('profiles').insert({
                     id: authData.user.id,
                     name: name,
@@ -335,7 +331,6 @@
                 });
                 if (profileError) throw profileError;
                 
-                // 3. Registra na Planilha (Backup)
                 fetch(API_URL, {
                     method: 'POST', mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
@@ -353,7 +348,6 @@
         };
 
         window.showMainScreen = async () => {
-            // Pega a sessão atual para garantir que temos o usuário mais recente
             const { data: { session }, error: sessionError } = await db.auth.getSession();
             if (sessionError || !session) {
                 console.error("Nenhuma sessão encontrada, fazendo logout.");
@@ -361,7 +355,6 @@
             }
             const user = session.user;
 
-            // Busca o perfil do usuário na tabela 'profiles'
             const { data: profile, error } = await db.from('profiles').select('*').eq('id', user.id).single();
             if (error) {
                 console.error("Erro ao buscar perfil:", error);
@@ -416,8 +409,8 @@
                     <div class="sale-header">
                         <div class="sale-date">📅 ${new Date(sale.date + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
                         <div class="sale-actions">
-                            <button class="btn-small btn-edit" onclick="editSale('${sale.id}')">✏️ Editar</button>
-                            <button class="btn-small btn-delete" onclick="deleteSale('${sale.id}')">🗑️ Excluir</button>
+                            <button class="btn-small btn-edit" onclick="window.editSale('${sale.id}')">✏️ Editar</button>
+                            <button class="btn-small btn-delete" onclick="window.deleteSale('${sale.id}')">🗑️ Excluir</button>
                         </div>
                     </div>
                     <div class="sale-details">
@@ -430,7 +423,6 @@
                 </div>
             `).join('');
         };
-
 
         window.addSale = async () => {
             const date = document.getElementById('saleDate').value;
@@ -448,7 +440,6 @@
             const btn = document.getElementById('btnAddSale');
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span> Salvando...';
-
 
             let payment_methods = [];
             let card_type = null;
@@ -505,7 +496,7 @@
                 alert(`Erro ao salvar venda: ${e.message}`);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<span id="btnAddText">➕ Adicionar Venda</span>';
+                btn.innerHTML = '➕ Adicionar Venda';
             }
         };
 
@@ -519,16 +510,20 @@
         };
 
         window.editSale = (id) => {
-            const sale = sales.find(s => s.id === id);
-            if(!sale) return;
+            const sale = sales.find(s => s.id == id);
+            if(!sale) {
+                console.error('Venda não encontrada:', id);
+                return;
+            }
+            
             document.getElementById('saleDate').value = sale.date;
             document.getElementById('saleProduct').value = sale.product;
             document.getElementById('saleQuantity').value = sale.quantity;
-            document.getElementById('saleUnitPrice').value = sale.unit_price;
-            document.getElementById('saleTotal').value = sale.total;
-            window.calculateTotal(); // Chamar para atualizar o total ao editar
+            document.getElementById('saleUnitPrice').value = parseFloat(sale.unit_price).toFixed(2);
+            
+            window.calculateTotal();
 
-            let paymentMethodValue = 'pix'; // Default to pix if no payment method found or recognized
+            let paymentMethodValue = 'pix';
             if (sale.payment_methods && Array.isArray(sale.payment_methods) && sale.payment_methods.length > 0) {
                 if (sale.payment_methods.includes('cartao') && sale.card_type) {
                     paymentMethodValue = sale.card_type;
@@ -541,8 +536,9 @@
             document.getElementById('paymentMethod').value = paymentMethodValue;
 
             editingId = id;
-            document.getElementById('btnAddSale').textContent = '💾 Salvar Alterações';
-            window.scrollTo({top:0, behavior:'smooth'});
+            document.getElementById('btnAddSale').innerHTML = '💾 Salvar Alterações';
+            
+            window.scrollTo({top: 0, behavior: 'smooth'});
         };
 
         window.clearForm = () => {
@@ -550,9 +546,9 @@
             document.getElementById('saleQuantity').value = 1;
             document.getElementById('saleUnitPrice').value = '';
             document.getElementById('saleTotal').value = '';
-            document.getElementById('paymentMethod').value = 'pix'; // Reset to default value
+            document.getElementById('paymentMethod').value = 'pix';
             editingId = null;
-            document.getElementById('btnAddSale').textContent = '➕ Adicionar Venda'; // Reset button text
+            document.getElementById('btnAddSale').innerHTML = '➕ Adicionar Venda';
         };
 
         window.logout = async () => {
@@ -560,11 +556,10 @@
             window.location.reload();
         };
         
-        // --- LÓGICA DE RELATÓRIO ---
         window.showReportScreen = async () => {
             document.getElementById('mainScreen').style.display = 'none';
             document.getElementById('reportScreen').style.display = 'flex';
-            await loadSales(); // Garante que os dados estão atualizados
+            await loadSales();
             renderReport();
         };
 
@@ -592,7 +587,6 @@
                 </tr>
             `).join('');
 
-            // Gráfico Produtos (Receita)
             const prodData = sales.reduce((acc, s) => { acc[s.product] = (acc[s.product]||0) + parseFloat(s.total); return acc; }, {});
             productChartInstance = new Chart(document.getElementById('productChart'), {
                 type: 'bar',
@@ -602,7 +596,6 @@
                 }
             });
 
-            // Gráfico Produtos (Quantidade)
             const quantityData = sales.reduce((acc, s) => { 
                 const quantity = parseInt(s.quantity, 10) || 0;
                 acc[s.product] = (acc[s.product] || 0) + quantity;
@@ -616,7 +609,6 @@
                 }
             });
 
-            // Gráfico Mensal
             const monthData = sales.reduce((acc, s) => { 
                 const k = s.date.substring(0, 7); 
                 acc[k] = (acc[k]||0) + parseFloat(s.total); 
@@ -630,7 +622,6 @@
                 }
             });
 
-            // Gráfico Meios de Pagamento
             const paymentData = sales.reduce((acc, sale) => {
                 let method = 'N/A';
                 if (sale.payment_methods && sale.payment_methods.length > 0) {
@@ -665,12 +656,10 @@
             });
         };
 
-        // --- INICIALIZAÇÃO E SESSÃO ---
         db.auth.onAuthStateChange((event, session) => {
             if (session?.user) {
-                showMainScreen(); // Não precisa mais passar o usuário, a função busca a sessão
+                showMainScreen();
             } else {
-                // Redireciona para tela de login se não houver sessão
                 document.getElementById('authScreen').style.display = 'block';
                 document.getElementById('mainScreen').style.display = 'none';
                 document.getElementById('reportScreen').style.display = 'none';
