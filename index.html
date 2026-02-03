@@ -80,7 +80,7 @@
     <div id="authScreen" class="container">
         <div class="auth-screen">
             <h1>📊 Relatório de Vendas</h1>
-            <p>Gerencie suas vendas na nuvem e Google Planilhas</p>
+            <p>Gerencie suas vendas</p>
             
             <div id="loginForm">
                 <div class="form-group">
@@ -129,6 +129,7 @@
             <h1 id="mainTitle">✍️ Minhas Vendas</h1>
             <div class="user-info">
                 <span id="userAvatar" class="avatar">U</span>
+                <a href="estoque.html" class="btn-secondary-light" style="text-decoration: none;">📦 Estoque</a>
                 <button class="btn-secondary-light" onclick="showReportScreen()">📈 Ver Relatório</button>
                 <button class="btn-secondary-light" onclick="logout()">Sair</button>
             </div>
@@ -144,17 +145,19 @@
                     </div>
                     <div class="form-group">
                         <label>Produto/Serviço</label>
-                        <input type="text" id="saleProduct" placeholder="Ex: Consultoria">
+                        <select id="saleProduct" onchange="loadProductDetails()" style="width: 100%; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1em;">
+                            <option value="">-- Selecione um produto --</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Quantidade</label>
+                        <label>Quantidade <span id="quantityInfo" style="color: #999; font-size: 0.9em;"></span></label>
                         <input type="number" id="saleQuantity" min="1" value="1" oninput="calculateTotal()">
                     </div>
                     <div class="form-group">
                         <label>Valor Unitário (R$)</label>
-                        <input type="number" id="saleUnitPrice" min="0" step="0.01" placeholder="0.00" oninput="calculateTotal()">
+                        <input type="number" id="saleUnitPrice" min="0" step="0.01" placeholder="0.00" oninput="calculateTotal()" readonly style="background: #e8f5e9;">
                     </div>
                     <div class="form-group">
                         <label>Total (R$)</label>
@@ -257,6 +260,8 @@
         let monthlyChartInstance = null;
         let productQuantityChartInstance = null;
         let paymentMethodChartInstance = null;
+        let inventoryProducts = []; // Lista de produtos do estoque
+        let selectedProductId = null; // ID do produto selecionado
 
         // Funções globais para o HTML acessar
         window.showRegister = () => {
@@ -274,6 +279,76 @@
             const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value) || 0;
             document.getElementById('saleTotal').value = (quantity * unitPrice).toFixed(2);
         };
+
+        // CARREGAR PRODUTOS DO ESTOQUE
+        window.loadInventoryProducts = async () => {
+            try {
+                const { data, error } = await db
+                    .from('inventory')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('product_name', { ascending: true });
+
+                if (error) throw error;
+
+                inventoryProducts = data || [];
+                updateProductSelect();
+            } catch (error) {
+                console.error('Erro ao carregar produtos do estoque:', error);
+            }
+        };
+
+        // ATUALIZAR SELECT COM PRODUTOS DISPONÍVEIS
+        window.updateProductSelect = () => {
+            const select = document.getElementById('saleProduct');
+            const currentValue = select.value;
+            const options = ['<option value="">-- Selecione um produto --</option>'];
+
+            inventoryProducts.forEach(product => {
+                options.push(`<option value="${product.id}" data-product-name="${escapeHtml(product.product_name)}" data-unit-price="${product.unit_price}" data-quantity="${product.quantity}">${escapeHtml(product.product_name)} (${product.quantity} em estoque)</option>`);
+            });
+
+            select.innerHTML = options.join('');
+            select.value = currentValue;
+        };
+
+        // CARREGAR DETALHES DO PRODUTO SELECIONADO
+        window.loadProductDetails = () => {
+            const select = document.getElementById('saleProduct');
+            const selectedOption = select.options[select.selectedIndex];
+
+            if (!selectedOption || !selectedOption.value) {
+                selectedProductId = null;
+                document.getElementById('saleUnitPrice').value = '';
+                document.getElementById('saleQuantity').value = 1;
+                document.getElementById('quantityInfo').textContent = '';
+                document.getElementById('saleTotal').value = '';
+                return;
+            }
+
+            selectedProductId = selectedOption.value;
+            const unitPrice = selectedOption.getAttribute('data-unit-price');
+            const availableQuantity = parseInt(selectedOption.getAttribute('data-quantity'));
+            const productName = selectedOption.getAttribute('data-product-name');
+
+            document.getElementById('saleUnitPrice').value = parseFloat(unitPrice).toFixed(2);
+            document.getElementById('saleQuantity').max = availableQuantity;
+            document.getElementById('saleQuantity').value = 1;
+            document.getElementById('quantityInfo').textContent = `(Disponível: ${availableQuantity})`;
+            calculateTotal();
+        };
+
+        // FUNÇÃO AUXILIAR PARA ESCAPAR HTML
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
 
         window.login = async () => {
             const email = document.getElementById('loginEmail').value;
@@ -372,6 +447,7 @@
             
             document.getElementById('saleDate').valueAsDate = new Date();
             
+            await loadInventoryProducts();
             await loadSales();
         };
 
@@ -426,16 +502,21 @@
 
         window.addSale = async () => {
             const date = document.getElementById('saleDate').value;
-            const product = document.getElementById('saleProduct').value;
+            const productSelectValue = document.getElementById('saleProduct').value;
             const quantity = parseFloat(document.getElementById('saleQuantity').value);
             const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value);
             const total = quantity * unitPrice;
             const paymentMethod = document.getElementById('paymentMethod').value;
 
-            if (!date || !product || !quantity || !paymentMethod) {
+            if (!date || !productSelectValue || !quantity || !paymentMethod) {
                 alert("Preencha todos os campos, incluindo o meio de pagamento!");
                 return;
             }
+
+            // Buscar o produto selecionado para obter o nome
+            const selectedOption = document.getElementById('saleProduct').options[document.getElementById('saleProduct').selectedIndex];
+            const product = selectedOption.getAttribute('data-product-name');
+            const productId = productSelectValue;
 
             const btn = document.getElementById('btnAddSale');
             btn.disabled = true;
@@ -478,6 +559,24 @@
                 } else {
                     const { error } = await db.from('sales').insert([supabaseSaleData]);
                     if (error) throw error;
+
+                    // ATUALIZAR ESTOQUE: Diminuir a quantidade do produto
+                    if (productId) {
+                        const product = inventoryProducts.find(p => p.id == productId);
+                        if (product) {
+                            const newQuantity = product.quantity - quantity;
+                            const { error: updateError } = await db
+                                .from('inventory')
+                                .update({ quantity: newQuantity })
+                                .eq('id', productId)
+                                .eq('user_id', currentUser.id);
+
+                            if (updateError) throw updateError;
+
+                            // Recarregar produtos após atualizar estoque
+                            await loadInventoryProducts();
+                        }
+                    }
                 }
 
                 editingId = null;
@@ -516,13 +615,22 @@
                 return;
             }
             
-            document.getElementById('saleDate').value = sale.date;
-            document.getElementById('saleProduct').value = sale.product;
-            document.getElementById('saleQuantity').value = sale.quantity;
-            document.getElementById('saleUnitPrice').value = parseFloat(sale.unit_price).toFixed(2);
+            // Encontrar o produto correspondente no estoque
+            const productInInventory = inventoryProducts.find(p => p.product_name === sale.product);
             
-            window.calculateTotal();
-
+            document.getElementById('saleDate').value = sale.date;
+            
+            if (productInInventory) {
+                document.getElementById('saleProduct').value = productInInventory.id;
+                loadProductDetails();
+            } else {
+                // Se não encontrar no estoque, criar opção temporária
+                document.getElementById('saleProduct').value = '';
+                document.getElementById('saleUnitPrice').value = parseFloat(sale.unit_price).toFixed(2);
+            }
+            
+            document.getElementById('saleQuantity').value = sale.quantity;
+            
             let paymentMethodValue = 'pix';
             if (sale.payment_methods && Array.isArray(sale.payment_methods) && sale.payment_methods.length > 0) {
                 if (sale.payment_methods.includes('cartao') && sale.card_type) {
@@ -546,8 +654,10 @@
             document.getElementById('saleQuantity').value = 1;
             document.getElementById('saleUnitPrice').value = '';
             document.getElementById('saleTotal').value = '';
+            document.getElementById('quantityInfo').textContent = '';
             document.getElementById('paymentMethod').value = 'pix';
             editingId = null;
+            selectedProductId = null;
             document.getElementById('btnAddSale').innerHTML = '➕ Adicionar Venda';
         };
 
