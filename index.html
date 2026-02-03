@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatório de Vendas</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script> 
     <style>
         /* MESMO CSS ORIGINAL */
@@ -30,12 +31,7 @@
         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; color: white; }
         .header h1 { font-size: 1.8em; }
         .user-info { display: flex; align-items: center; gap: 15px; }
-        .avatar { width: 50px; height: 50px; border-radius: 50%; background: white; color: #667eea; display: flex; align-items: center; justify-content: center; font-size: 1.5em; font-weight: bold; transition: transform 0.2s; }
-        .avatar-dropdown { position: relative; cursor: pointer; z-index: 10; }
-        .avatar-dropdown.active .dropdown-menu { opacity: 1; visibility: visible; transform: translateY(0); }
-        .dropdown-menu { position: absolute; top: 60px; right: 0; background: white; border-radius: 8px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); min-width: 200px; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: opacity 0.3s, transform 0.3s; display: flex; flex-direction: column; padding: 5px 0; }
-        .dropdown-menu button { background: none; border: none; padding: 12px 20px; text-align: left; cursor: pointer; font-size: 1em; color: #333; transition: background-color 0.2s; white-space: nowrap; width: 100%; }
-        .dropdown-menu button:hover { background-color: #f5f5f5; color: #667eea; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; background: white; color: #667eea; display: flex; align-items: center; justify-content: center; font-size: 1.5em; font-weight: bold; }
         .btn-secondary-light { background: rgba(255, 255, 255, 0.2); color: white; padding: 10px 20px; border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
         .btn-secondary-light:hover { background: white; color: #667eea; }
         .content { padding: 40px; }
@@ -84,7 +80,7 @@
     <div id="authScreen" class="container">
         <div class="auth-screen">
             <h1>📊 Relatório de Vendas</h1>
-            <p>Gerencie suas vendas na nuvem e Google Planilhas</p>
+            <p>Gerencie suas vendas</p>
             
             <div id="loginForm">
                 <div class="form-group">
@@ -132,13 +128,10 @@
         <div class="header">
             <h1 id="mainTitle">✍️ Minhas Vendas</h1>
             <div class="user-info">
-                <div class="avatar-dropdown" id="mainAvatarDropdown">
-                    <div class="avatar" id="userAvatar">U</div>
-                    <div class="dropdown-menu">
-                        <button onclick="showReportScreen()">Ver Relatório de Vendas</button>
-                        <button onclick="logout()">Sair</button>
-                    </div>
-                </div>
+                <span id="userAvatar" class="avatar">U</span>
+                <a href="estoque.html" class="btn-secondary-light" style="text-decoration: none;">📦 Estoque</a>
+                <button class="btn-secondary-light" onclick="showReportScreen()">📈 Ver Relatório</button>
+                <button class="btn-secondary-light" onclick="logout()">Sair</button>
             </div>
         </div>
 
@@ -152,25 +145,38 @@
                     </div>
                     <div class="form-group">
                         <label>Produto/Serviço</label>
-                        <input type="text" id="saleProduct" placeholder="Ex: Consultoria">
+                        <select id="saleProduct" onchange="loadProductDetails()" style="width: 100%; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1em;">
+                            <option value="">-- Selecione um produto --</option>
+                        </select>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Quantidade</label>
+                        <label>Quantidade <span id="quantityInfo" style="color: #999; font-size: 0.9em;"></span></label>
                         <input type="number" id="saleQuantity" min="1" value="1" oninput="calculateTotal()">
                     </div>
                     <div class="form-group">
                         <label>Valor Unitário (R$)</label>
-                        <input type="number" id="saleUnitPrice" min="0" step="0.01" placeholder="0.00" oninput="calculateTotal()">
+                        <input type="number" id="saleUnitPrice" min="0" step="0.01" placeholder="0.00" oninput="calculateTotal()" readonly style="background: #e8f5e9;">
                     </div>
                     <div class="form-group">
                         <label>Total (R$)</label>
                         <input type="text" id="saleTotal" readonly style="background: #e8f5e9; font-weight: 600; color: #27ae60;">
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="paymentMethod">Meio de Pagamento</label>
+                        <select id="paymentMethod" class="form-control" style="width: 100%; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1em;">
+                            <option value="pix">PIX</option>
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="debito">Cartão de Débito</option>
+                            <option value="credito">Cartão de Crédito</option>
+                        </select>
+                    </div>
+                </div>
                 <button class="btn btn-primary" onclick="addSale()" id="btnAddSale">
-                    <span id="btnAddText">➕ Adicionar Venda</span>
+                    ➕ Adicionar Venda
                 </button>
             </div>
 
@@ -178,7 +184,7 @@
                 <h2>📋 Lista de Vendas</h2>
                 <div id="salesContainer"></div>
             </div>
-            </div>
+        </div>
     </div>
     
     <div id="reportScreen" class="container report-screen">
@@ -186,12 +192,8 @@
             <h1 id="reportTitle">📈 Relatório de Vendas</h1>
             <div class="user-info">
                 <button class="btn-secondary-light" onclick="showMainScreen()">← Voltar para Vendas</button>
-                <div class="avatar-dropdown" id="reportAvatarDropdown">
-                    <div class="avatar" id="reportAvatar">U</div>
-                    <div class="dropdown-menu">
-                        <button onclick="logout()">Sair</button>
-                    </div>
-                </div>
+                <span id="reportAvatar" class="avatar">U</span>
+                <button class="btn-secondary-light" onclick="logout()">Sair</button>
             </div>
         </div>
 
@@ -203,8 +205,16 @@
                     <canvas id="productChart"></canvas>
                 </div>
                 <div class="chart-box">
+                    <h2>Unidades por Produto</h2>
+                    <canvas id="productQuantityChart"></canvas>
+                </div>
+                <div class="chart-box">
                     <h2>Total de Vendas Mensais (R$)</h2>
                     <canvas id="monthlyChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h2>Meios de Pagamento</h2>
+                    <canvas id="paymentMethodChart"></canvas>
                 </div>
             </div>
             <div class="data-table-container">
@@ -217,10 +227,11 @@
                             <th>Quantidade</th>
                             <th>Valor Unitário (R$)</th>
                             <th>Total (R$)</th>
+                            <th>Meio de Pagamento</th>
                         </tr>
                     </thead>
                     <tbody id="salesTableBody">
-                        <tr><td colspan="5" style="text-align: center;">Carregando dados...</td></tr>
+                        <tr><td colspan="6" style="text-align: center;">Carregando dados...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -229,22 +240,13 @@
 
     <script type="module">
         // --------------------------------------------------------------
-        // CONFIGURAÇÃO FIREBASE (SUBSTITUA PELOS SEUS DADOS!)
+        // CONFIGURAÇÃO SUPABASE (SUBSTITUA PELOS SEUS DADOS!)
         // --------------------------------------------------------------
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-firestore.js";
+        const SUPABASE_URL = "https://excdrnjzwldleyzpdriv.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4Y2Rybmp6d2xkbGV5enBkcml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNTU4MTksImV4cCI6MjA3OTYzMTgxOX0.IC4aKCNFrGwv9XyR9c2k5YppqLDgM7Bnq_oiuJdapKA";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyB1RJZpmn7GZPC7loOdmsSGRPwb4JyfYA4",
-            authDomain: "relatorio-vendas-48367.firebaseapp.com",
-            projectId: "relatorio-vendas-48367",
-            storageBucket: "relatorio-vendas-48367.firebasestorage.app",
-            messagingSenderId: "988680424592",
-            appId: "1:988680424592:web:8149480bddc0fed69c9c15"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const { createClient } = supabase;
+        const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // --------------------------------------------------------------
         // CONFIGURAÇÃO GOOGLE SHEETS (Mantenha sua URL)
@@ -256,6 +258,10 @@
         let editingId = null;
         let productChartInstance = null;
         let monthlyChartInstance = null;
+        let productQuantityChartInstance = null;
+        let paymentMethodChartInstance = null;
+        let inventoryProducts = []; // Lista de produtos do estoque
+        let selectedProductId = null; // ID do produto selecionado
 
         // Funções globais para o HTML acessar
         window.showRegister = () => {
@@ -274,6 +280,76 @@
             document.getElementById('saleTotal').value = (quantity * unitPrice).toFixed(2);
         };
 
+        // CARREGAR PRODUTOS DO ESTOQUE
+        window.loadInventoryProducts = async () => {
+            try {
+                const { data, error } = await db
+                    .from('inventory')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('product_name', { ascending: true });
+
+                if (error) throw error;
+
+                inventoryProducts = data || [];
+                updateProductSelect();
+            } catch (error) {
+                console.error('Erro ao carregar produtos do estoque:', error);
+            }
+        };
+
+        // ATUALIZAR SELECT COM PRODUTOS DISPONÍVEIS
+        window.updateProductSelect = () => {
+            const select = document.getElementById('saleProduct');
+            const currentValue = select.value;
+            const options = ['<option value="">-- Selecione um produto --</option>'];
+
+            inventoryProducts.forEach(product => {
+                options.push(`<option value="${product.id}" data-product-name="${escapeHtml(product.product_name)}" data-unit-price="${product.unit_price}" data-quantity="${product.quantity}">${escapeHtml(product.product_name)} (${product.quantity} em estoque)</option>`);
+            });
+
+            select.innerHTML = options.join('');
+            select.value = currentValue;
+        };
+
+        // CARREGAR DETALHES DO PRODUTO SELECIONADO
+        window.loadProductDetails = () => {
+            const select = document.getElementById('saleProduct');
+            const selectedOption = select.options[select.selectedIndex];
+
+            if (!selectedOption || !selectedOption.value) {
+                selectedProductId = null;
+                document.getElementById('saleUnitPrice').value = '';
+                document.getElementById('saleQuantity').value = 1;
+                document.getElementById('quantityInfo').textContent = '';
+                document.getElementById('saleTotal').value = '';
+                return;
+            }
+
+            selectedProductId = selectedOption.value;
+            const unitPrice = selectedOption.getAttribute('data-unit-price');
+            const availableQuantity = parseInt(selectedOption.getAttribute('data-quantity'));
+            const productName = selectedOption.getAttribute('data-product-name');
+
+            document.getElementById('saleUnitPrice').value = parseFloat(unitPrice).toFixed(2);
+            document.getElementById('saleQuantity').max = availableQuantity;
+            document.getElementById('saleQuantity').value = 1;
+            document.getElementById('quantityInfo').textContent = `(Disponível: ${availableQuantity})`;
+            calculateTotal();
+        };
+
+        // FUNÇÃO AUXILIAR PARA ESCAPAR HTML
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
         window.login = async () => {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
@@ -286,23 +362,14 @@
             btn.innerHTML = '<span class="loading"></span> Entrando...';
 
             try {
-                // Busca usuário no Firestore
-                const q = query(collection(db, "users"), where("email", "==", email), where("password", "==", password));
-                const querySnapshot = await getDocs(q);
-
-                if (!querySnapshot.empty) {
-                    currentUser = querySnapshot.docs[0].data();
-                    localStorage.setItem('user_session', JSON.stringify(currentUser)); // Sessão simples
-                    showMainScreen();
-                } else {
-                    msgDiv.innerHTML = '<div class="error">Email ou senha incorretos.</div>';
-                }
+                const { data, error } = await db.auth.signInWithPassword({ email, password });
+                if (error) throw error;
             } catch (e) {
                 console.error(e);
-                msgDiv.innerHTML = '<div class="error">Erro de conexão.</div>';
+                msgDiv.innerHTML = `<div class="error">${e.message || 'Erro de conexão.'}</div>`;
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'Entrar';
+                btn.innerHTML = 'Entrar';
             }
         };
 
@@ -319,22 +386,33 @@
             btn.textContent = "Cadastrando...";
 
             try {
-                // Verifica se já existe
-                const q = query(collection(db, "users"), where("email", "==", email));
-                const snapshot = await getDocs(q);
-                if (!snapshot.empty) throw new Error("Email já cadastrado.");
+                const { data: authData, error: authError } = await db.auth.signUp({ 
+                    email, 
+                    password,
+                    options: {
+                        data: { 
+                            full_name: name,
+                            venture_name: ventureName
+                        }
+                    }
+                });
+                if (authError) throw authError;
 
-                // Salva no Firebase
-                await addDoc(collection(db, "users"), { name, ventureName, email, password });
+                const { error: profileError } = await db.from('profiles').insert({
+                    id: authData.user.id,
+                    name: name,
+                    venture_name: ventureName,
+                    email: email
+                });
+                if (profileError) throw profileError;
                 
-                // Registra na Planilha (Backup)
                 fetch(API_URL, {
                     method: 'POST', mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'register', name, ventureName, email })
                 });
 
-                alert("Conta criada com sucesso!");
+                alert("Conta criada com sucesso! Faça o login.");
                 showLogin();
             } catch (e) {
                 alert(e.message);
@@ -344,36 +422,50 @@
             }
         };
 
-        window.showMainScreen = () => {
+        window.showMainScreen = async () => {
+            const { data: { session }, error: sessionError } = await db.auth.getSession();
+            if (sessionError || !session) {
+                console.error("Nenhuma sessão encontrada, fazendo logout.");
+                return logout();
+            }
+            const user = session.user;
+
+            const { data: profile, error } = await db.from('profiles').select('*').eq('id', user.id).single();
+            if (error) {
+                console.error("Erro ao buscar perfil:", error);
+                return logout();
+            }
+            currentUser = profile;
+
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('mainScreen').style.display = 'flex';
             document.getElementById('reportScreen').style.display = 'none';
             
             document.getElementById('userAvatar').textContent = currentUser.name[0].toUpperCase();
             document.getElementById('reportAvatar').textContent = currentUser.name[0].toUpperCase();
-            document.getElementById('mainTitle').innerHTML = `✍️ ${currentUser.ventureName || currentUser.name}`;
+            document.getElementById('mainTitle').innerHTML = `✍️ ${currentUser.venture_name || currentUser.name}`;
             
-            // Configura data de hoje
             document.getElementById('saleDate').valueAsDate = new Date();
             
-            loadSales();
+            await loadInventoryProducts();
+            await loadSales();
         };
 
         window.loadSales = async () => {
+            if (!currentUser) return;
             const container = document.getElementById('salesContainer');
             container.innerHTML = '<div style="text-align:center; padding:20px;"><div class="loading" style="border-color:#667eea; border-top-color:transparent;"></div> Carregando vendas...</div>';
-            sales = [];
-
+            
             try {
-                const q = query(collection(db, "sales"), where("userEmail", "==", currentUser.email));
-                const querySnapshot = await getDocs(q);
+                const { data, error } = await db
+                    .from('sales')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('date', { ascending: false });
+
+                if (error) throw error;
                 
-                querySnapshot.forEach((doc) => {
-                    sales.push({ ...doc.data(), firestoreId: doc.id });
-                });
-                
-                // Ordenar por data decrescente
-                sales.sort((a, b) => new Date(b.date) - new Date(a.date));
+                sales = data || [];
                 displaySales();
             } catch (e) {
                 console.error(e);
@@ -393,15 +485,16 @@
                     <div class="sale-header">
                         <div class="sale-date">📅 ${new Date(sale.date + 'T00:00:00').toLocaleDateString('pt-BR')}</div>
                         <div class="sale-actions">
-                            <button class="btn-small btn-edit" onclick="editSale('${sale.firestoreId}')">✏️ Editar</button>
-                            <button class="btn-small btn-delete" onclick="deleteSale('${sale.firestoreId}')">🗑️ Excluir</button>
+                            <button class="btn-small btn-edit" onclick="window.editSale('${sale.id}')">✏️ Editar</button>
+                            <button class="btn-small btn-delete" onclick="window.deleteSale('${sale.id}')">🗑️ Excluir</button>
                         </div>
                     </div>
                     <div class="sale-details">
                         <div class="sale-detail"><div class="sale-detail-label">Produto</div><strong>${sale.product}</strong></div>
                         <div class="sale-detail"><div class="sale-detail-label">Qtd</div>${sale.quantity}</div>
-                        <div class="sale-detail"><div class="sale-detail-label">Valor</div>R$ ${parseFloat(sale.unitPrice).toFixed(2)}</div>
+                        <div class="sale-detail"><div class="sale-detail-label">Valor</div>R$ ${parseFloat(sale.unit_price).toFixed(2)}</div>
                         <div class="sale-detail"><div class="sale-detail-label">Total</div><span class="total-value">R$ ${parseFloat(sale.total).toFixed(2)}</span></div>
+                        <div class="sale-detail"><div class="sale-detail-label">Pagamento</div><strong>${sale.payment_methods && sale.payment_methods.includes('cartao') ? (sale.card_type === 'debito' ? 'Débito' : 'Crédito') : sale.payment_methods ? sale.payment_methods[0] : 'N/A'}</strong></div>
                     </div>
                 </div>
             `).join('');
@@ -409,98 +502,182 @@
 
         window.addSale = async () => {
             const date = document.getElementById('saleDate').value;
-            const product = document.getElementById('saleProduct').value;
+            const productSelectValue = document.getElementById('saleProduct').value;
             const quantity = parseFloat(document.getElementById('saleQuantity').value);
             const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value);
             const total = quantity * unitPrice;
+            const paymentMethod = document.getElementById('paymentMethod').value;
 
-            if (!date || !product || !quantity) return alert("Preencha tudo!");
+            if (!date || !productSelectValue || !quantity || !paymentMethod) {
+                alert("Preencha todos os campos, incluindo o meio de pagamento!");
+                return;
+            }
+
+            // Buscar o produto selecionado para obter o nome
+            const selectedOption = document.getElementById('saleProduct').options[document.getElementById('saleProduct').selectedIndex];
+            const product = selectedOption.getAttribute('data-product-name');
+            const productId = productSelectValue;
 
             const btn = document.getElementById('btnAddSale');
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span> Salvando...';
 
-            const saleData = {
-                date, product, quantity, unitPrice, total,
-                userEmail: currentUser.email,
+            let payment_methods = [];
+            let card_type = null;
+
+            if (paymentMethod === 'pix' || paymentMethod === 'dinheiro') {
+                payment_methods.push(paymentMethod);
+            } else if (paymentMethod === 'debito' || paymentMethod === 'credito') {
+                payment_methods.push('cartao');
+                card_type = paymentMethod;
+            }
+
+            const supabaseSaleData = {
+                date,
+                product,
+                quantity,
+                unit_price: unitPrice,
+                total,
+                user_id: currentUser.id,
+                username: currentUser.name,
+                venturename: currentUser.venture_name,
+                payment_methods,
+                card_type
+            };
+
+            const googleSheetsSaleData = {
+                ...supabaseSaleData,
                 userName: currentUser.name,
-                ventureName: currentUser.ventureName
+                ventureName: currentUser.venture_name,
+                userEmail: currentUser.email
             };
 
             try {
                 if (editingId) {
-                    // Atualizar
-                    await updateDoc(doc(db, "sales", editingId), saleData);
-                    editingId = null;
-                    document.getElementById('btnAddText').textContent = '➕ Adicionar Venda';
+                    const { error } = await db.from('sales').update(supabaseSaleData).eq('id', editingId);
+                    if (error) throw error;
                 } else {
-                    // Criar novo
-                    await addDoc(collection(db, "sales"), saleData);
-                    
-                    // Envia para Planilha Google (Sincronização em segundo plano)
-                    fetch(API_URL, {
-                        method: 'POST', mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'saveSale', ...saleData })
-                    }).catch(err => console.log("Erro planilha", err));
+                    const { error } = await db.from('sales').insert([supabaseSaleData]);
+                    if (error) throw error;
+
+                    // ATUALIZAR ESTOQUE: Diminuir a quantidade do produto
+                    if (productId) {
+                        const product = inventoryProducts.find(p => p.id == productId);
+                        if (product) {
+                            const newQuantity = product.quantity - quantity;
+                            const { error: updateError } = await db
+                                .from('inventory')
+                                .update({ quantity: newQuantity })
+                                .eq('id', productId)
+                                .eq('user_id', currentUser.id);
+
+                            if (updateError) throw updateError;
+
+                            // Recarregar produtos após atualizar estoque
+                            await loadInventoryProducts();
+                        }
+                    }
                 }
 
+                editingId = null;
+
+                fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'saveSale', ...googleSheetsSaleData })
+                }).catch(err => console.log("Erro planilha", err));
+
                 window.clearForm();
-                loadSales();
+                await loadSales();
             } catch (e) {
-                console.error(e);
-                alert("Erro ao salvar venda.");
+                console.error("Supabase Error:", e);
+                alert(`Erro ao salvar venda: ${e.message}`);
             } finally {
                 btn.disabled = false;
-                if(!editingId) btn.innerHTML = '<span id="btnAddText">➕ Adicionar Venda</span>';
+                btn.innerHTML = '➕ Adicionar Venda';
             }
         };
 
         window.deleteSale = async (id) => {
             if(!confirm("Tem certeza?")) return;
             try {
-                await deleteDoc(doc(db, "sales", id));
-                loadSales();
+                const { error } = await db.from('sales').delete().eq('id', id);
+                if (error) throw error;
+                await loadSales();
             } catch (e) { alert("Erro ao excluir."); }
         };
 
         window.editSale = (id) => {
-            const sale = sales.find(s => s.firestoreId === id);
-            if(!sale) return;
+            const sale = sales.find(s => s.id == id);
+            if(!sale) {
+                console.error('Venda não encontrada:', id);
+                return;
+            }
+            
+            // Encontrar o produto correspondente no estoque
+            const productInInventory = inventoryProducts.find(p => p.product_name === sale.product);
+            
             document.getElementById('saleDate').value = sale.date;
-            document.getElementById('saleProduct').value = sale.product;
+            
+            if (productInInventory) {
+                document.getElementById('saleProduct').value = productInInventory.id;
+                loadProductDetails();
+            } else {
+                // Se não encontrar no estoque, criar opção temporária
+                document.getElementById('saleProduct').value = '';
+                document.getElementById('saleUnitPrice').value = parseFloat(sale.unit_price).toFixed(2);
+            }
+            
             document.getElementById('saleQuantity').value = sale.quantity;
-            document.getElementById('saleUnitPrice').value = sale.unitPrice;
-            document.getElementById('saleTotal').value = sale.total;
+            
+            let paymentMethodValue = 'pix';
+            if (sale.payment_methods && Array.isArray(sale.payment_methods) && sale.payment_methods.length > 0) {
+                if (sale.payment_methods.includes('cartao') && sale.card_type) {
+                    paymentMethodValue = sale.card_type;
+                } else if (sale.payment_methods.includes('pix')) {
+                    paymentMethodValue = 'pix';
+                } else if (sale.payment_methods.includes('dinheiro')) {
+                    paymentMethodValue = 'dinheiro';
+                }
+            }
+            document.getElementById('paymentMethod').value = paymentMethodValue;
+
             editingId = id;
-            document.getElementById('btnAddText').textContent = '💾 Salvar Alterações';
-            window.scrollTo({top:0, behavior:'smooth'});
+            document.getElementById('btnAddSale').innerHTML = '💾 Salvar Alterações';
+            
+            window.scrollTo({top: 0, behavior: 'smooth'});
         };
 
         window.clearForm = () => {
             document.getElementById('saleProduct').value = '';
             document.getElementById('saleQuantity').value = 1;
+            document.getElementById('saleUnitPrice').value = '';
             document.getElementById('saleTotal').value = '';
+            document.getElementById('quantityInfo').textContent = '';
+            document.getElementById('paymentMethod').value = 'pix';
             editingId = null;
+            selectedProductId = null;
+            document.getElementById('btnAddSale').innerHTML = '➕ Adicionar Venda';
         };
 
-        window.logout = () => {
-            localStorage.removeItem('user_session');
+        window.logout = async () => {
+            await db.auth.signOut();
             window.location.reload();
         };
         
-        // --- LÓGICA DE RELATÓRIO ---
-
-        window.showReportScreen = () => {
+        window.showReportScreen = async () => {
             document.getElementById('mainScreen').style.display = 'none';
             document.getElementById('reportScreen').style.display = 'flex';
+            await loadSales();
             renderReport();
         };
 
         window.renderReport = () => {
-            // Lógica simplificada de gráficos
             if (productChartInstance) productChartInstance.destroy();
             if (monthlyChartInstance) monthlyChartInstance.destroy();
+            if (productQuantityChartInstance) productQuantityChartInstance.destroy();
+            if (paymentMethodChartInstance) paymentMethodChartInstance.destroy();
 
             const totalRev = sales.reduce((acc, s) => acc + parseFloat(s.total), 0);
             
@@ -509,18 +686,17 @@
                 <div class="card total-sales"><div class="card-title">Vendas</div><div class="card-value">${sales.length}</div></div>
             `;
 
-            // Tabela
             document.getElementById('salesTableBody').innerHTML = sales.map(s => `
                 <tr>
                     <td>${new Date(s.date+'T00:00:00').toLocaleDateString('pt-BR')}</td>
                     <td>${s.product}</td>
                     <td>${s.quantity}</td>
-                    <td>R$ ${parseFloat(s.unitPrice).toFixed(2)}</td>
+                    <td>R$ ${parseFloat(s.unit_price).toFixed(2)}</td>
                     <td>R$ ${parseFloat(s.total).toFixed(2)}</td>
+                    <td>${s.payment_methods && s.payment_methods.includes('cartao') ? (s.card_type === 'debito' ? 'Cartão de Débito' : 'Cartão de Crédito') : s.payment_methods ? s.payment_methods[0] : 'N/A'}</td>
                 </tr>
             `).join('');
 
-            // Gráfico Produtos
             const prodData = sales.reduce((acc, s) => { acc[s.product] = (acc[s.product]||0) + parseFloat(s.total); return acc; }, {});
             productChartInstance = new Chart(document.getElementById('productChart'), {
                 type: 'bar',
@@ -530,7 +706,19 @@
                 }
             });
 
-            // Gráfico Mensal
+            const quantityData = sales.reduce((acc, s) => { 
+                const quantity = parseInt(s.quantity, 10) || 0;
+                acc[s.product] = (acc[s.product] || 0) + quantity;
+                return acc; 
+            }, {});
+            productQuantityChartInstance = new Chart(document.getElementById('productQuantityChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(quantityData),
+                    datasets: [{ label: 'Unidades Vendidas', data: Object.values(quantityData), backgroundColor: '#f39c12' }]
+                }
+            });
+
             const monthData = sales.reduce((acc, s) => { 
                 const k = s.date.substring(0, 7); 
                 acc[k] = (acc[k]||0) + parseFloat(s.total); 
@@ -543,23 +731,51 @@
                     datasets: [{ label: 'Total (R$)', data: Object.keys(monthData).sort().map(k=>monthData[k]), borderColor: '#27ae60', fill: true }]
                 }
             });
+
+            const paymentData = sales.reduce((acc, sale) => {
+                let method = 'N/A';
+                if (sale.payment_methods && sale.payment_methods.length > 0) {
+                    if (sale.payment_methods.includes('cartao')) {
+                        method = sale.card_type === 'debito' ? 'Cartão de Débito' : 'Cartão de Crédito';
+                    } else {
+                        method = sale.payment_methods[0];
+                    }
+                }
+                acc[method] = (acc[method] || 0) + 1;
+                return acc;
+            }, {});
+
+            paymentMethodChartInstance = new Chart(document.getElementById('paymentMethodChart'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(paymentData),
+                    datasets: [{
+                        label: 'Número de Vendas',
+                        data: Object.values(paymentData),
+                        backgroundColor: ['#667eea', '#764ba2', '#3498db', '#2980b9', '#e74c3c']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
         };
 
-        // Dropdown logic
-        document.addEventListener('click', (e) => {
-            if(e.target.closest('.avatar')) {
-                e.target.closest('.avatar-dropdown').classList.toggle('active');
+        db.auth.onAuthStateChange((event, session) => {
+            if (session?.user) {
+                showMainScreen();
             } else {
-                document.querySelectorAll('.avatar-dropdown').forEach(d => d.classList.remove('active'));
+                document.getElementById('authScreen').style.display = 'block';
+                document.getElementById('mainScreen').style.display = 'none';
+                document.getElementById('reportScreen').style.display = 'none';
+                currentUser = null;
             }
         });
-
-        // Init
-        const session = localStorage.getItem('user_session');
-        if(session) {
-            currentUser = JSON.parse(session);
-            showMainScreen();
-        }
     </script>
 </body>
 </html>
