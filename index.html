@@ -93,9 +93,22 @@
                 </div>
                 <button class="btn btn-primary" onclick="login()" id="btnLogin">Entrar</button>
                 <div class="switch-auth">
-                    Não tem conta? <a href="javascript:void(0)" onclick="showRegister()">Criar conta</a>
+                    Não tem conta? <a href="javascript:void(0)" onclick="showRegister()">Criar conta</a><br>
+                    <a href="javascript:void(0)" onclick="showResetPassword()">Esqueci minha senha</a>
                 </div>
                 <div id="loginMessage"></div>
+            </div>
+
+            <div id="resetPasswordForm" class="hidden">
+                <div class="form-group">
+                    <label for="resetEmail">Email</label>
+                    <input type="email" id="resetEmail" placeholder="seu@email.com">
+                </div>
+                <button class="btn btn-primary" onclick="resetPassword()" id="btnResetPassword">Recuperar Senha</button>
+                <div class="switch-auth">
+                    <a href="javascript:void(0)" onclick="showLogin()">Voltar para Login</a>
+                </div>
+                <div id="resetMessage"></div>
             </div>
 
             <div id="registerForm" class="hidden">
@@ -266,18 +279,51 @@
         // Funções globais para o HTML acessar
         window.showRegister = () => {
             document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('resetPasswordForm').classList.add('hidden');
             document.getElementById('registerForm').classList.remove('hidden');
         };
 
         window.showLogin = () => {
             document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('resetPasswordForm').classList.add('hidden');
             document.getElementById('loginForm').classList.remove('hidden');
+        };
+
+        window.showResetPassword = () => {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('resetPasswordForm').classList.remove('hidden');
         };
 
         window.calculateTotal = () => {
             const quantity = parseFloat(document.getElementById('saleQuantity').value) || 0;
             const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value) || 0;
             document.getElementById('saleTotal').value = (quantity * unitPrice).toFixed(2);
+        };
+
+        window.resetPassword = async () => {
+            const email = document.getElementById('resetEmail').value;
+            const msgDiv = document.getElementById('resetMessage');
+            const btn = document.getElementById('btnResetPassword');
+
+            if (!email) return msgDiv.innerHTML = '<div class="error">Informe seu email!</div>';
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Enviando...';
+
+            try {
+                const { error } = await db.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin + window.location.pathname,
+                });
+                if (error) throw error;
+                msgDiv.innerHTML = '<div class="success">Link de recuperação enviado para seu email!</div>';
+            } catch (e) {
+                console.error(e);
+                msgDiv.innerHTML = `<div class="error">${e.message || 'Erro ao enviar email.'}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Recuperar Senha';
+            }
         };
 
         window.login = async () => {
