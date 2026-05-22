@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relatório de Vendas</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3208/3208707.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script> 
     <style>
@@ -73,10 +76,21 @@
         .hidden { display: none !important; }
         .error { background: #fee; color: #c33; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #fcc; }
         .success { background: #efe; color: #3c3; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #cfc; }
-        @media (max-width: 768px) { .auth-screen { padding: 40px 20px; } .header { padding: 15px 20px; flex-direction: row; gap: 10px; } .header h1 { font-size: 1.3em; } .content { padding: 20px; } .form-row { grid-template-columns: 1fr; } }
+
+        /* Toast Notification Styles */
+        .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 15px 25px; border-radius: 10px; color: white; font-weight: 600; box-shadow: 0 5px 15px rgba(0,0,0,0.2); animation: slideIn 0.3s ease-out; max-width: 300px; }
+        .toast.success { background: #27ae60; border: none; }
+        .toast.error { background: #e74c3c; border: none; }
+        .toast.info { background: #3498db; border: none; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast.fade-out { opacity: 0; transform: translateX(100%); transition: all 0.3s ease-in; }
+
+        @media (max-width: 768px) { .auth-screen { padding: 40px 20px; } .header { padding: 15px 20px; flex-direction: row; gap: 10px; } .header h1 { font-size: 1.3em; } .content { padding: 20px; } .form-row { grid-template-columns: 1fr; } .toast-container { left: 20px; right: 20px; bottom: 20px; } .toast { max-width: 100%; } }
     </style>
 </head>
 <body>
+    <div id="toastContainer" class="toast-container"></div>
     <div id="authScreen" class="container">
         <div class="auth-screen">
             <h1>📊 Relatório de Vendas</h1>
@@ -96,7 +110,6 @@
                     Não tem conta? <a href="javascript:void(0)" onclick="showRegister()">Criar conta</a><br>
                     <a href="javascript:void(0)" onclick="showResetPassword()">Esqueci minha senha</a>
                 </div>
-                <div id="loginMessage"></div>
             </div>
 
             <div id="resetPasswordForm" class="hidden">
@@ -104,11 +117,18 @@
                     <label for="resetEmail">Email</label>
                     <input type="email" id="resetEmail" placeholder="seu@email.com">
                 </div>
-                <button class="btn btn-primary" onclick="resetPassword()" id="btnResetPassword">Recuperar Senha</button>
+                <button class="btn btn-primary" onclick="resetPassword()" id="btnResetPassword">Enviar Email de Recuperação</button>
                 <div class="switch-auth">
                     <a href="javascript:void(0)" onclick="showLogin()">Voltar para Login</a>
                 </div>
-                <div id="resetMessage"></div>
+            </div>
+
+            <div id="updatePasswordForm" class="hidden">
+                <div class="form-group">
+                    <label for="newPassword">Nova Senha</label>
+                    <input type="password" id="newPassword" placeholder="Digite sua nova senha">
+                </div>
+                <button class="btn btn-primary" onclick="updatePassword()" id="btnUpdatePassword">Atualizar Senha</button>
             </div>
 
             <div id="registerForm" class="hidden">
@@ -132,7 +152,6 @@
                 <div class="switch-auth">
                     Já tem conta? <a href="javascript:void(0)" onclick="showLogin()">Fazer login</a>
                 </div>
-                <div id="registerMessage"></div>
             </div>
         </div>
     </div>
@@ -286,13 +305,35 @@
         window.showLogin = () => {
             document.getElementById('registerForm').classList.add('hidden');
             document.getElementById('resetPasswordForm').classList.add('hidden');
+            document.getElementById('updatePasswordForm').classList.add('hidden');
             document.getElementById('loginForm').classList.remove('hidden');
         };
 
         window.showResetPassword = () => {
             document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('updatePasswordForm').classList.add('hidden');
             document.getElementById('resetPasswordForm').classList.remove('hidden');
+        };
+
+        window.showUpdatePassword = () => {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('resetPasswordForm').classList.add('hidden');
+            document.getElementById('updatePasswordForm').classList.remove('hidden');
+        };
+
+        window.showToast = (message, type = 'info') => {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         };
 
         window.calculateTotal = () => {
@@ -301,12 +342,34 @@
             document.getElementById('saleTotal').value = (quantity * unitPrice).toFixed(2);
         };
 
+        window.updatePassword = async () => {
+            const newPassword = document.getElementById('newPassword').value;
+            const btn = document.getElementById('btnUpdatePassword');
+
+            if (!newPassword || newPassword.length < 6) return window.showToast("A senha deve ter pelo menos 6 caracteres.", "error");
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Atualizando...';
+
+            try {
+                const { error } = await db.auth.updateUser({ password: newPassword });
+                if (error) throw error;
+                window.showToast("Senha atualizada com sucesso!", "success");
+                showLogin();
+            } catch (e) {
+                console.error(e);
+                window.showToast(e.message || 'Erro ao atualizar senha.', "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Atualizar Senha';
+            }
+        };
+
         window.resetPassword = async () => {
             const email = document.getElementById('resetEmail').value;
-            const msgDiv = document.getElementById('resetMessage');
             const btn = document.getElementById('btnResetPassword');
 
-            if (!email) return msgDiv.innerHTML = '<div class="error">Informe seu email!</div>';
+            if (!email) return window.showToast("Informe seu email!", "error");
 
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span> Enviando...';
@@ -316,10 +379,11 @@
                     redirectTo: window.location.origin + window.location.pathname,
                 });
                 if (error) throw error;
-                msgDiv.innerHTML = '<div class="success">Link de recuperação enviado para seu email!</div>';
+                window.showToast("Link de recuperação enviado para seu email!", "success");
+                showLogin();
             } catch (e) {
                 console.error(e);
-                msgDiv.innerHTML = `<div class="error">${e.message || 'Erro ao enviar email.'}</div>`;
+                window.showToast(e.message || 'Erro ao enviar email.', "error");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = 'Recuperar Senha';
@@ -329,10 +393,9 @@
         window.login = async () => {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
-            const msgDiv = document.getElementById('loginMessage');
             const btn = document.getElementById('btnLogin');
 
-            if (!email || !password) return msgDiv.innerHTML = '<div class="error">Preencha os campos!</div>';
+            if (!email || !password) return window.showToast("Preencha os campos!", "error");
 
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span> Entrando...';
@@ -342,7 +405,7 @@
                 if (error) throw error;
             } catch (e) {
                 console.error(e);
-                msgDiv.innerHTML = `<div class="error">${e.message || 'Erro de conexão.'}</div>`;
+                window.showToast(e.message || 'Erro de conexão.', "error");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = 'Entrar';
@@ -356,7 +419,7 @@
             const password = document.getElementById('registerPassword').value;
             const btn = document.getElementById('btnRegister');
 
-            if (!name || !email || !password) return alert("Preencha todos os campos.");
+            if (!name || !email || !password) return window.showToast("Preencha todos os campos.", "error");
             
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span> Cadastrando...';
@@ -388,10 +451,10 @@
                     body: JSON.stringify({ action: 'register', name, ventureName, email })
                 });
 
-                alert("Conta criada com sucesso! Faça o login.");
+                window.showToast("Conta criada com sucesso! Faça o login.", "success");
                 showLogin();
             } catch (e) {
-                alert(e.message);
+                window.showToast(e.message, "error");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = "Criar Conta";
@@ -484,7 +547,7 @@
             const paymentMethod = document.getElementById('paymentMethod').value;
 
             if (!date || !product || !quantity || !paymentMethod) {
-                alert("Preencha todos os campos, incluindo o meio de pagamento!");
+                window.showToast("Preencha todos os campos!", "error");
                 return;
             }
 
@@ -544,7 +607,7 @@
                 await loadSales();
             } catch (e) {
                 console.error("Supabase Error:", e);
-                alert(`Erro ao salvar venda: ${e.message}`);
+                window.showToast(`Erro ao salvar venda: ${e.message}`, "error");
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '➕ Adicionar Venda';
@@ -552,12 +615,13 @@
         };
 
         window.deleteSale = async (id) => {
-            if(!confirm("Tem certeza?")) return;
+            if(!confirm("Tem certeza que deseja excluir esta venda?")) return;
             try {
                 const { error } = await db.from('sales').delete().eq('id', id);
                 if (error) throw error;
+                window.showToast("Venda excluída com sucesso!", "success");
                 await loadSales();
-            } catch (e) { alert("Erro ao excluir."); }
+            } catch (e) { window.showToast("Erro ao excluir.", "error"); }
         };
 
         window.editSale = (id) => {
@@ -712,6 +776,10 @@
         };
 
         db.auth.onAuthStateChange((event, session) => {
+            if (event === "PASSWORD_RECOVERY") {
+                showUpdatePassword();
+                return;
+            }
             if (session?.user) {
                 showMainScreen();
             } else {
@@ -721,6 +789,13 @@
                 currentUser = null;
             }
         });
+
+        // Registrar Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed:', err));
+            });
+        }
     </script>
 </body>
 </html>

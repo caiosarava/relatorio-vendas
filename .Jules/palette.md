@@ -15,3 +15,9 @@
 **Learning:** Adding a password recovery option directly on the login screen reduces friction for users who have lost access. Providing clear feedback (success/error) and a way to navigate back to the login form is essential for a smooth experience.
 
 **Action:** Always include a "Forgot Password" link on login forms and ensure the recovery flow is consistent with the rest of the app's design.
+
+## 2025-05-14 - PWA and Instant Feedback (Toasts)
+
+**Learning:** Transforming a web app into a PWA significantly improves the "native" feel and allows for offline capabilities, which is critical for business tools. Replacing blocking `alert()` calls with Toasts improves the flow of interaction and perceived performance.
+
+**Action:** Implement PWAs for all management-focused applications. Use non-blocking Toast notifications for common actions (save, delete, error).
