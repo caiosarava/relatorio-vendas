@@ -6,7 +6,7 @@
     <title>Relatório de Vendas</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#667eea">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3208/3208707.png">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2454/2454269.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script> 
     <style>
@@ -126,7 +126,7 @@
 <body>
     <div id="toastContainer" class="toast-container"></div>
 
-    <nav class="bottom-nav" id="bottomNav">
+    <nav class="bottom-nav hidden" id="bottomNav">
         <div class="nav-item active" onclick="showMainScreen()" id="navSales">
             <span>✍️</span>
             <span>Vendas</span>
@@ -529,7 +529,8 @@
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('mainScreen').style.display = 'flex';
             document.getElementById('reportScreen').style.display = 'none';
-            
+            document.getElementById('bottomNav').classList.remove('hidden');
+
             document.getElementById('navSales').classList.add('active');
             document.getElementById('navReport').classList.remove('active');
 
@@ -732,6 +733,7 @@
             document.getElementById('authScreen').style.display = 'none';
             document.getElementById('mainScreen').style.display = 'none';
             document.getElementById('reportScreen').style.display = 'flex';
+            document.getElementById('bottomNav').classList.remove('hidden');
 
             document.getElementById('navSales').classList.remove('active');
             document.getElementById('navReport').classList.add('active');
@@ -844,7 +846,7 @@
                 document.getElementById('authScreen').style.display = 'block';
                 document.getElementById('mainScreen').style.display = 'none';
                 document.getElementById('reportScreen').style.display = 'none';
-                document.getElementById('bottomNav').style.display = 'none';
+                document.getElementById('bottomNav').classList.add('hidden');
                 currentUser = null;
             }
         });
