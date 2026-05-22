@@ -48,8 +48,8 @@
         <div class="auth-container">
             <h1>🔐 Admin Dashboard</h1>
             <p>Acesso restrito</p>
-            <div class="form-group"><label>Email</label><input type="email" id="adminUser" placeholder="seu@email.com"></div>
-            <div class="form-group"><label>Senha</label><input type="password" id="adminPass" placeholder="••••••"></div>
+            <div class="form-group"><label for="adminUser">Email</label><input type="email" id="adminUser" placeholder="seu@email.com"></div>
+            <div class="form-group"><label for="adminPass">Senha</label><input type="password" id="adminPass" placeholder="••••••"></div>
             <button class="btn btn-primary" onclick="adminLogin()" id="btnLogin">Entrar</button>
             <div id="loginMessage"></div>
         </div>
@@ -66,10 +66,10 @@
 
         <div class="content">
             <div class="filter-section">
-                <div class="filter-group"><label>Início</label><input type="date" id="filterStartDate"></div>
-                <div class="filter-group"><label>Fim</label><input type="date" id="filterEndDate"></div>
+                <div class="filter-group"><label for="filterStartDate">Início</label><input type="date" id="filterStartDate"></div>
+                <div class="filter-group"><label for="filterEndDate">Fim</label><input type="date" id="filterEndDate"></div>
                 <div class="filter-group">
-                    <label>Usuário</label>
+                    <label for="filterUser">Usuário</label>
                     <select id="filterUser"><option value="">Todos</option></select>
                 </div>
                 <button class="filter-btn" onclick="applyFilters()">Aplicar</button>
