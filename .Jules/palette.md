@@ -9,3 +9,9 @@
 **Learning:** When a form is used for both creating and editing, users can easily get confused about which mode they are in. Adding a clear title change (e.g., "Editar Venda" vs "Adicionar Nova Venda") and a "Cancel" button provides necessary feedback and control.
 
 **Action:** Implement explicit "Edit Mode" UI changes, including a way to return to "Create Mode" without a page refresh.
+
+## 2025-05-14 - Password Recovery Flow
+
+**Learning:** Adding a password recovery option directly on the login screen reduces friction for users who have lost access. Providing clear feedback (success/error) and a way to navigate back to the login form is essential for a smooth experience.
+
+**Action:** Always include a "Forgot Password" link on login forms and ensure the recovery flow is consistent with the rest of the app's design.
