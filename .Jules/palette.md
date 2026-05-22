@@ -1,0 +1,11 @@
+## 2025-05-14 - Label-Input Association for Accessibility
+
+**Learning:** Associating `<label>` elements with their corresponding inputs using `for` and `id` is a simple yet high-impact accessibility win. It not only helps screen readers but also improves usability for all users by increasing the clickable area to focus an input.
+
+**Action:** Always ensure every form input has a unique `id` and a matching `<label for="...">`.
+
+## 2025-05-14 - Explicit Edit State in Forms
+
+**Learning:** When a form is used for both creating and editing, users can easily get confused about which mode they are in. Adding a clear title change (e.g., "Editar Venda" vs "Adicionar Nova Venda") and a "Cancel" button provides necessary feedback and control.
+
+**Action:** Implement explicit "Edit Mode" UI changes, including a way to return to "Create Mode" without a page refresh.
