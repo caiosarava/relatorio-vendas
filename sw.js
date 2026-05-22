@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vendas-cache-v2';
+const CACHE_NAME = 'vendas-cache-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -29,18 +29,25 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Estratégia Stale-While-Revalidate para assets, Network-First para o resto
+  if (!(event.request.url.indexOf('http') === 0)) return;
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, networkResponse.clone());
-          });
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request).then((networkResponse) => {
+        if (!networkResponse || networkResponse.status !== 200) {
+          return networkResponse;
         }
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
+        });
         return networkResponse;
+      }).catch(() => {
+        // Fallback
       });
-      return cachedResponse || fetchPromise;
     })
   );
 });
