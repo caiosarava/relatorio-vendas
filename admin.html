@@ -58,7 +58,6 @@
 
             .stats-grid { grid-template-columns: 1fr; }
             .charts-grid { grid-template-columns: 1fr; }
-            .chart-box { min-height: 300px; padding: 15px; }
             .header { flex-direction: column; gap: 15px; text-align: center; padding: 20px; }
             .header h1 { font-size: 1.5em; }
         }
@@ -290,8 +289,7 @@
                 data: {
                     labels: sortedProducts.map(item => item[0]),
                     datasets: [{ label: 'Quantidade Vendida', data: sortedProducts.map(item => item[1]), backgroundColor: '#3498db' }]
-                },
-                options: { maintainAspectRatio: false, responsive: true }
+                }
             });
 
             // Timeline
@@ -307,8 +305,7 @@
                 data: {
                     labels: sortedKeys,
                     datasets: [{ label: 'Receita', data: sortedKeys.map(k=>timeData[k]), borderColor: '#27ae60', tension: 0.4 }]
-                },
-                options: { maintainAspectRatio: false, responsive: true }
+                }
             });
 
             // Vendas por Empreendimento
@@ -339,7 +336,6 @@
                 data: { labels: months, datasets: datasets },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
                     scales: { x: { stacked: true }, y: { stacked: true } }
                 }
             });
@@ -370,7 +366,6 @@
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false,
                     plugins: {
                         legend: {
                             position: 'top',
