@@ -1,11 +1,9 @@
-const CACHE_NAME = 'vendas-cache-v4';
+const CACHE_NAME = 'vendas-cache-v5';
 const ASSETS = [
   './',
   './index.html',
   './admin.html',
-  './manifest.json',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js'
+  './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
@@ -31,23 +29,39 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (!(event.request.url.indexOf('http') === 0)) return;
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200) {
-          return networkResponse;
+  // Estratégia Network-First para documentos (HTML), Cache-First para o resto
+  const isDocument = event.request.mode === 'navigate';
+
+  if (isDocument) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          return caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, networkResponse.clone());
+            return networkResponse;
+          });
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+  } else {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
         }
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
+        return fetch(event.request).then((networkResponse) => {
+          if (!networkResponse || networkResponse.status !== 200) {
+            return networkResponse;
+          }
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+          return networkResponse;
         });
-        return networkResponse;
-      }).catch(() => {
-        // Fallback
-      });
-    })
-  );
+      })
+    );
+  }
 });

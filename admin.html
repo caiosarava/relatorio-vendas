@@ -84,6 +84,10 @@
                     <span class="password-toggle" onclick="togglePassword('adminPass')">👁️</span>
                 </div>
             </div>
+            <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: -10px; margin-bottom: 20px;">
+                <input type="checkbox" id="adminRememberMe" style="width: 20px; height: 20px; cursor: pointer;" checked>
+                <label for="adminRememberMe" style="margin-bottom: 0; cursor: pointer; font-size: 1em; color: #666;">Manter conectado</label>
+            </div>
             <button class="btn btn-primary" onclick="adminLogin()" id="btnLogin">Entrar</button>
             <div id="loginMessage"></div>
         </div>
@@ -167,7 +171,34 @@
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4Y2Rybmp6d2xkbGV5enBkcml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNTU4MTksImV4cCI6MjA3OTYzMTgxOX0.IC4aKCNFrGwv9XyR9c2k5YppqLDgM7Bnq_oiuJdapKA";
 
         const { createClient } = supabase;
-        const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const customStorage = {
+            getItem: (key) => {
+                return localStorage.getItem(key) || sessionStorage.getItem(key);
+            },
+            setItem: (key, value) => {
+                const remember = localStorage.getItem('admin_remember_me') === 'true';
+                if (remember) {
+                    localStorage.setItem(key, value);
+                    sessionStorage.removeItem(key);
+                } else {
+                    sessionStorage.setItem(key, value);
+                    localStorage.removeItem(key);
+                }
+            },
+            removeItem: (key) => {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            }
+        };
+
+        const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                storage: customStorage,
+                autoRefreshToken: true,
+                persistSession: true
+            }
+        });
 
         // Login Simples (MANTIDO POR SIMPLICIDADE, O IDEAL SERIA USAR RBAC DO SUPABASE)
         const CREDENTIALS = { user: 'daes.ecosol@gmail.com', pass: 'olimpicodaes1' };
@@ -178,10 +209,13 @@
         window.adminLogin = async () => {
             const email = document.getElementById('adminUser').value;
             const password = document.getElementById('adminPass').value;
+            const rememberMe = document.getElementById('adminRememberMe').checked;
             const msgDiv = document.getElementById('loginMessage');
             const btn = document.getElementById('btnLogin');
 
             if (!email || !password) return msgDiv.innerHTML = '<div class="error">Preencha os campos!</div>';
+
+            localStorage.setItem('admin_remember_me', rememberMe);
 
             btn.disabled = true;
             btn.innerHTML = '<span>Entrando...</span>';
@@ -206,6 +240,7 @@
         };
 
         window.adminLogout = async () => {
+            localStorage.removeItem('admin_remember_me');
             await db.auth.signOut();
             window.location.reload();
         };

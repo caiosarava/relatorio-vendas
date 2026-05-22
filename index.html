@@ -186,6 +186,10 @@
                         <span class="password-toggle" onclick="togglePassword('loginPassword')">👁️</span>
                     </div>
                 </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: -10px; margin-bottom: 20px;">
+                    <input type="checkbox" id="rememberMe" style="width: 20px; height: 20px; cursor: pointer;" checked>
+                    <label for="rememberMe" style="margin-bottom: 0; cursor: pointer; font-size: 1em; color: #666;">Manter conectado</label>
+                </div>
                 <button class="btn btn-primary" onclick="login()" id="btnLogin">Entrar</button>
                 <div class="switch-auth">
                     Não tem conta? <a href="javascript:void(0)" onclick="showRegister()">Criar conta</a><br>
@@ -367,7 +371,35 @@
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4Y2Rybmp6d2xkbGV5enBkcml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNTU4MTksImV4cCI6MjA3OTYzMTgxOX0.IC4aKCNFrGwv9XyR9c2k5YppqLDgM7Bnq_oiuJdapKA";
 
         const { createClient } = supabase;
-        const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Custom storage logic to handle "Keep me logged in"
+        const customStorage = {
+            getItem: (key) => {
+                return localStorage.getItem(key) || sessionStorage.getItem(key);
+            },
+            setItem: (key, value) => {
+                const remember = localStorage.getItem('vendas_remember_me') === 'true';
+                if (remember) {
+                    localStorage.setItem(key, value);
+                    sessionStorage.removeItem(key);
+                } else {
+                    sessionStorage.setItem(key, value);
+                    localStorage.removeItem(key);
+                }
+            },
+            removeItem: (key) => {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            }
+        };
+
+        const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                storage: customStorage,
+                autoRefreshToken: true,
+                persistSession: true
+            }
+        });
 
         // --------------------------------------------------------------
         // CONFIGURAÇÃO GOOGLE SHEETS (Mantenha sua URL)
@@ -492,9 +524,12 @@
         window.login = async () => {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
             const btn = document.getElementById('btnLogin');
 
             if (!email || !password) return window.showToast("Preencha os campos!", "error");
+
+            localStorage.setItem('vendas_remember_me', rememberMe);
 
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span> Entrando...';
@@ -774,6 +809,7 @@
         };
 
         window.logout = async () => {
+            localStorage.removeItem('vendas_remember_me');
             await db.auth.signOut();
             window.location.reload();
         };
