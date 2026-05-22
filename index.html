@@ -22,6 +22,8 @@
         .auth-screen p { color: #666; margin-bottom: 40px; }
         .form-group { margin-bottom: 20px; text-align: left; }
         .form-group label { display: block; margin-bottom: 8px; color: #333; font-weight: 500; font-size: 1.1em; }
+        .password-container { position: relative; }
+        .password-toggle { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666; font-size: 1.2em; user-select: none; padding: 10px; }
         .form-group input { width: 100%; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; transition: border-color 0.3s; }
         .form-group input:focus { outline: none; border-color: #667eea; }
         .btn { padding: 15px 40px; border: none; border-radius: 10px; font-size: 1.1em; font-weight: 600; cursor: pointer; transition: all 0.3s; width: 100%; margin-top: 10px; min-height: 48px; display: flex; align-items: center; justify-content: center; }
@@ -104,6 +106,17 @@
 
         /* Bottom Navigation */
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: none; justify-content: space-around; padding: 10px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; border-top: 1px solid #eee; }
+
+        /* Install Banner */
+        .install-banner { position: fixed; bottom: 100px; left: 20px; right: 20px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 2000; display: flex; align-items: center; gap: 15px; animation: slideUp 0.5s ease-out; border: 1px solid #667eea; }
+        .install-icon { width: 50px; height: 50px; border-radius: 10px; background: #667eea; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5em; flex-shrink: 0; }
+        .install-text { flex: 1; }
+        .install-text h3 { font-size: 1em; color: #333; margin-bottom: 2px; }
+        .install-text p { font-size: 0.85em; color: #666; }
+        .install-actions { display: flex; flex-direction: column; gap: 5px; }
+        .btn-install { background: #667eea; color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9em; }
+        .btn-close-install { background: none; border: none; color: #999; cursor: pointer; font-size: 0.8em; text-decoration: underline; }
+        @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #666; text-decoration: none; font-size: 0.8em; font-weight: 600; cursor: pointer; transition: all 0.3s; flex: 1; }
         .nav-item i { font-size: 1.5em; }
         .nav-item.active { color: #667eea; }
@@ -128,6 +141,18 @@
 </head>
 <body>
     <div id="toastContainer" class="toast-container"></div>
+
+    <div id="installBanner" class="install-banner hidden">
+        <div class="install-icon">💰</div>
+        <div class="install-text">
+            <h3>Instalar Aplicativo</h3>
+            <p>Acesse o relatório de vendas mais rápido da sua tela inicial.</p>
+        </div>
+        <div class="install-actions">
+            <button class="btn-install" id="btnInstallPWA">Instalar</button>
+            <button class="btn-close-install" onclick="closeInstallBanner()">Agora não</button>
+        </div>
+    </div>
 
     <nav class="bottom-nav hidden" id="bottomNav">
         <div class="nav-item active" onclick="showMainScreen()" id="navSales">
@@ -156,7 +181,10 @@
                 </div>
                 <div class="form-group">
                     <label for="loginPassword">Senha</label>
-                    <input type="password" id="loginPassword" placeholder="Sua senha">
+                    <div class="password-container">
+                        <input type="password" id="loginPassword" placeholder="Sua senha">
+                        <span class="password-toggle" onclick="togglePassword('loginPassword')">👁️</span>
+                    </div>
                 </div>
                 <button class="btn btn-primary" onclick="login()" id="btnLogin">Entrar</button>
                 <div class="switch-auth">
@@ -179,7 +207,10 @@
             <div id="updatePasswordForm" class="hidden">
                 <div class="form-group">
                     <label for="newPassword">Nova Senha</label>
-                    <input type="password" id="newPassword" placeholder="Digite sua nova senha">
+                    <div class="password-container">
+                        <input type="password" id="newPassword" placeholder="Digite sua nova senha">
+                        <span class="password-toggle" onclick="togglePassword('newPassword')">👁️</span>
+                    </div>
                 </div>
                 <button class="btn btn-primary" onclick="updatePassword()" id="btnUpdatePassword">Atualizar Senha</button>
             </div>
@@ -199,7 +230,10 @@
                 </div>
                 <div class="form-group">
                     <label for="registerPassword">Senha</label>
-                    <input type="password" id="registerPassword" placeholder="Crie uma senha">
+                    <div class="password-container">
+                        <input type="password" id="registerPassword" placeholder="Crie uma senha">
+                        <span class="password-toggle" onclick="togglePassword('registerPassword')">👁️</span>
+                    </div>
                 </div>
                 <button class="btn btn-primary" onclick="register()" id="btnRegister">Criar Conta</button>
                 <div class="switch-auth">
@@ -374,6 +408,18 @@
             document.getElementById('registerForm').classList.add('hidden');
             document.getElementById('resetPasswordForm').classList.add('hidden');
             document.getElementById('updatePasswordForm').classList.remove('hidden');
+        };
+
+        window.togglePassword = (id) => {
+            const input = document.getElementById(id);
+            const toggle = input.nextElementSibling;
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                toggle.textContent = '👁️';
+            }
         };
 
         window.showToast = (message, type = 'info') => {
@@ -853,6 +899,28 @@
                 currentUser = null;
             }
         });
+
+        // Lógica de Instalação PWA
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const banner = document.getElementById('installBanner');
+            if (banner) banner.classList.remove('hidden');
+        });
+
+        document.getElementById('btnInstallPWA')?.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            deferredPrompt = null;
+            closeInstallBanner();
+        });
+
+        window.closeInstallBanner = () => {
+            document.getElementById('installBanner').classList.add('hidden');
+        };
 
         // Registrar Service Worker para PWA
         if ('serviceWorker' in navigator) {

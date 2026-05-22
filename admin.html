@@ -21,6 +21,8 @@
         .auth-container h1 { color: #1e3c72; margin-bottom: 10px; font-size: 2.5em; }
         .form-group { margin-bottom: 20px; text-align: left; }
         .form-group label { display: block; margin-bottom: 8px; color: #333; font-weight: 500; }
+        .password-container { position: relative; }
+        .password-toggle { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666; font-size: 1.2em; user-select: none; padding: 10px; }
         .form-group input { width: 100%; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; }
         .btn { padding: 15px 40px; border: none; border-radius: 10px; font-size: 1.1em; font-weight: 600; cursor: pointer; transition: all 0.3s; width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: center; }
         .btn-primary { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; }
@@ -75,7 +77,13 @@
             <h1>🔐 Admin Dashboard</h1>
             <p>Acesso restrito</p>
             <div class="form-group"><label for="adminUser">Email</label><input type="email" id="adminUser" placeholder="seu@email.com"></div>
-            <div class="form-group"><label for="adminPass">Senha</label><input type="password" id="adminPass" placeholder="••••••"></div>
+            <div class="form-group">
+                <label for="adminPass">Senha</label>
+                <div class="password-container">
+                    <input type="password" id="adminPass" placeholder="••••••">
+                    <span class="password-toggle" onclick="togglePassword('adminPass')">👁️</span>
+                </div>
+            </div>
             <button class="btn btn-primary" onclick="adminLogin()" id="btnLogin">Entrar</button>
             <div id="loginMessage"></div>
         </div>
@@ -138,6 +146,19 @@
         </div>
     </div>
 
+    <script>
+        function togglePassword(id) {
+            const input = document.getElementById(id);
+            const toggle = input.nextElementSibling;
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                toggle.textContent = '👁️';
+            }
+        }
+    </script>
     <script type="module">
         // --------------------------------------------------------------
         // CONFIGURAÇÃO SUPABASE (COPIE OS MESMOS DADOS DO INDEX.HTML)
