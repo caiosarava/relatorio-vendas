@@ -414,6 +414,18 @@
         let productQuantityChartInstance = null;
         let paymentMethodChartInstance = null;
 
+        // Função utilitária para gerar código anônimo determinístico baseado em hash
+        function getAnonymousId(idStr, prefix = 'EMP') {
+            if (!idStr) return `${prefix} #0000`;
+            let hash = 0;
+            for (let i = 0; i < idStr.length; i++) {
+                hash = ((hash << 5) - hash) + idStr.charCodeAt(i);
+                hash |= 0;
+            }
+            const hex = Math.abs(hash).toString(16).toUpperCase().padStart(4, '0').slice(0, 4);
+            return `${prefix} #${hex}`;
+        }
+
         // Funções globais para o HTML acessar
         window.showRegister = () => {
             document.getElementById('loginForm').classList.add('hidden');
@@ -703,6 +715,9 @@
                 card_type = paymentMethod;
             }
 
+            const anonVenture = getAnonymousId(currentUser.venture_name || currentUser.id, 'EMP');
+            const anonUser = getAnonymousId(currentUser.id, 'USU');
+
             const supabaseSaleData = {
                 date,
                 product,
@@ -710,17 +725,17 @@
                 unit_price: unitPrice,
                 total,
                 user_id: currentUser.id,
-                username: currentUser.name,
-                venturename: currentUser.venture_name,
+                username: anonUser,
+                venturename: anonVenture,
                 payment_methods,
                 card_type
             };
 
             const googleSheetsSaleData = {
                 ...supabaseSaleData,
-                userName: currentUser.name,
-                ventureName: currentUser.venture_name,
-                userEmail: currentUser.email
+                userName: anonUser,
+                ventureName: anonVenture,
+                userEmail: 'anonimo@ecosol.org'
             };
 
             try {
