@@ -115,6 +115,7 @@
                     <select id="filterUser"><option value="">Todos</option></select>
                 </div>
                 <button class="filter-btn" onclick="applyFilters()">Aplicar</button>
+                <button class="filter-btn" onclick="exportCSV()" style="background: #27ae60;">📥 Exportar CSV</button>
             </div>
 
             <div class="stats-grid">
@@ -308,19 +309,65 @@
             }
         };
 
+        let currentFilteredSales = [];
+
         window.applyFilters = () => {
             const start = document.getElementById('filterStartDate').value;
             const end = document.getElementById('filterEndDate').value;
             const userId = document.getElementById('filterUser').value;
 
-            const filtered = allData.sales.filter(s => {
+            currentFilteredSales = allData.sales.filter(s => {
                 if (start && s.date < start) return false;
                 if (end && s.date > end) return false;
                 if (userId && s.user_id !== userId) return false;
                 return true;
             });
 
-            renderDashboard(filtered);
+            renderDashboard(currentFilteredSales);
+        };
+
+        window.exportCSV = () => {
+            if (!currentFilteredSales || currentFilteredSales.length === 0) {
+                alert("Nenhuma venda disponível para exportação.");
+                return;
+            }
+
+            const headers = ["Data", "Usuario", "Empreendimento", "Produto", "Quantidade", "Valor_Unitario", "Total", "Meio_Pagamento"];
+
+            const rows = currentFilteredSales.map(s => {
+                const userDisplay = isAnonymousMode
+                    ? getAnonymousId(s.user_id || s.profiles?.id, 'USU')
+                    : (s.profiles?.name || s.profiles?.email || 'N/A');
+
+                const ventureDisplay = isAnonymousMode
+                    ? getAnonymousId(s.profiles?.venture_name || s.user_id || s.profiles?.id, 'EMP')
+                    : (s.profiles?.venture_name || 'N/A');
+
+                const paymentMethod = s.payment_methods && s.payment_methods.includes('cartao')
+                    ? (s.card_type === 'debito' ? 'Cartao de Debito' : 'Cartao de Credito')
+                    : (s.payment_methods ? s.payment_methods[0] : 'N/A');
+
+                return [
+                    s.date,
+                    `"${userDisplay.replace(/"/g, '""')}"`,
+                    `"${ventureDisplay.replace(/"/g, '""')}"`,
+                    `"${(s.product || '').replace(/"/g, '""')}"`,
+                    s.quantity,
+                    parseFloat(s.unit_price || 0).toFixed(2),
+                    parseFloat(s.total || 0).toFixed(2),
+                    `"${paymentMethod.replace(/"/g, '""')}"`
+                ].join(",");
+            });
+
+            const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `relatorio_vendas_${isAnonymousMode ? 'anonimo' : 'identificado'}_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         };
 
         function renderDashboard(data) {
