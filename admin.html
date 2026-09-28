@@ -97,6 +97,10 @@
         <div class="header">
             <h1>📊 Dashboard Administrativo Global</h1>
             <div class="header-info">
+                <div style="display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.15); padding: 8px 15px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.3);">
+                    <input type="checkbox" id="toggleAnonymous" onchange="toggleAnonymousMode()" style="width: 18px; height: 18px; cursor: pointer;" checked>
+                    <label for="toggleAnonymous" style="cursor: pointer; font-weight: 600; font-size: 0.9em; user-select: none;">🕵️ Modo Anônimo</label>
+                </div>
                 <button class="refresh-btn" onclick="loadDashboardData()">🔄 Atualizar</button>
                 <button class="logout-btn" onclick="adminLogout()">Sair</button>
             </div>
@@ -205,6 +209,24 @@
         
         let allData = { sales: [], users: [] };
         let charts = {};
+        let isAnonymousMode = true;
+
+        function getAnonymousId(idStr, prefix = 'EMP') {
+            if (!idStr) return `${prefix} #0000`;
+            let hash = 0;
+            for (let i = 0; i < idStr.length; i++) {
+                hash = ((hash << 5) - hash) + idStr.charCodeAt(i);
+                hash |= 0;
+            }
+            const hex = Math.abs(hash).toString(16).toUpperCase().padStart(4, '0').slice(0, 4);
+            return `${prefix} #${hex}`;
+        }
+
+        window.toggleAnonymousMode = () => {
+            isAnonymousMode = document.getElementById('toggleAnonymous').checked;
+            populateUserFilter();
+            applyFilters();
+        };
 
         window.adminLogin = async () => {
             const email = document.getElementById('adminUser').value;
@@ -245,6 +267,20 @@
             window.location.reload();
         };
 
+        function populateUserFilter() {
+            const select = document.getElementById('filterUser');
+            if (!select) return;
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Todos</option>' +
+                allData.users.map(u => {
+                    const displayName = isAnonymousMode
+                        ? `${getAnonymousId(u.id, 'USU')} (${getAnonymousId(u.venture_name || u.id, 'EMP')})`
+                        : (u.name || u.email);
+                    return `<option value="${u.id}">${displayName}</option>`;
+                }).join('');
+            select.value = currentValue;
+        }
+
         window.loadDashboardData = async () => {
             const btn = document.querySelector('.refresh-btn');
             btn.textContent = '⏳ ...';
@@ -262,11 +298,7 @@
                 allData.sales = salesData || [];
                 allData.users = usersData || [];
                 
-                // Popula Filtro de Usuários
-                const select = document.getElementById('filterUser');
-                select.innerHTML = '<option value="">Todos</option>' + 
-                    allData.users.map(u => `<option value="${u.id}">${u.name || u.email}</option>`).join('');
-                
+                populateUserFilter();
                 applyFilters();
             } catch (e) {
                 console.error(e);
@@ -302,26 +334,37 @@
             const tbody = document.getElementById('allSalesTableBody');
             tbody.innerHTML = data
                 .sort((a,b) => b.date.localeCompare(a.date))
-                .map(s => `
-                    <tr>
-                        <td data-label="Data">${new Date(s.date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
-                        <td data-label="Usuário">${s.profiles?.name || s.profiles?.email || 'Usuário Deletado'}</td>
-                        <td data-label="Produto">${s.product}</td>
-                        <td data-label="Qtd">${s.quantity}</td>
-                        <td data-label="Total">R$ ${parseFloat(s.total).toFixed(2)}</td>
-                    </tr>
-                `).join('');
+                .map(s => {
+                    const userDisplay = isAnonymousMode
+                        ? getAnonymousId(s.user_id || s.profiles?.id, 'USU')
+                        : (s.profiles?.name || s.profiles?.email || 'Usuário Deletado');
+                    return `
+                        <tr>
+                            <td data-label="Data">${new Date(s.date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                            <td data-label="Usuário">${userDisplay}</td>
+                            <td data-label="Produto">${s.product}</td>
+                            <td data-label="Qtd">${s.quantity}</td>
+                            <td data-label="Total">R$ ${parseFloat(s.total).toFixed(2)}</td>
+                        </tr>
+                    `;
+                }).join('');
 
             // Tabela de Usuários
             const userBody = document.getElementById('usersTableBody');
             if (userBody) {
                 userBody.innerHTML = allData.users
-                    .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+                    .map(u => {
+                        const nameDisplay = isAnonymousMode ? getAnonymousId(u.id, 'USU') : (u.name || 'N/A');
+                        const ventureDisplay = isAnonymousMode ? getAnonymousId(u.venture_name || u.id, 'EMP') : (u.venture_name || 'N/A');
+                        const emailDisplay = isAnonymousMode ? 'anonimo@ecosol.org' : u.email;
+                        return { nameDisplay, ventureDisplay, emailDisplay, rawName: u.name || '' };
+                    })
+                    .sort((a, b) => a.nameDisplay.localeCompare(b.nameDisplay))
                     .map(u => `
                         <tr>
-                            <td data-label="Nome">${u.name || 'N/A'}</td>
-                            <td data-label="Empreendimento">${u.venture_name || 'N/A'}</td>
-                            <td data-label="Email">${u.email}</td>
+                            <td data-label="Nome">${u.nameDisplay}</td>
+                            <td data-label="Empreendimento">${u.ventureDisplay}</td>
+                            <td data-label="Email">${u.emailDisplay}</td>
                         </tr>
                     `).join('');
             }
@@ -367,7 +410,10 @@
             // Vendas por Empreendimento
             const salesByGroupData = data.reduce((acc, sale) => {
                 const month = sale.date.substring(0, 7);
-                const group = sale.profiles?.venture_name || sale.profiles?.name || sale.profiles?.email || 'Desconhecido';
+                const rawGroup = sale.profiles?.venture_name || sale.profiles?.name || sale.profiles?.email || 'Desconhecido';
+                const group = isAnonymousMode
+                    ? getAnonymousId(sale.profiles?.venture_name || sale.user_id || sale.profiles?.id || sale.id, 'EMP')
+                    : rawGroup;
                 const total = parseFloat(sale.total);
 
                 if (!acc[month]) acc[month] = {};
@@ -378,7 +424,12 @@
             }, {});
 
             const months = Object.keys(salesByGroupData).sort();
-            const groups = [...new Set(data.map(s => s.profiles?.venture_name || s.profiles?.name || s.profiles?.email || 'Desconhecido'))];
+            const groups = [...new Set(data.map(s => {
+                const rawGroup = s.profiles?.venture_name || s.profiles?.name || s.profiles?.email || 'Desconhecido';
+                return isAnonymousMode
+                    ? getAnonymousId(s.profiles?.venture_name || s.user_id || s.profiles?.id || s.id, 'EMP')
+                    : rawGroup;
+            }))];
             const backgroundColors = ['#2980b9', '#c0392b', '#27ae60', '#f39c12', '#8e44ad', '#2c3e50', '#16a085', '#d35400'];
 
             const datasets = groups.map((group, i) => ({
