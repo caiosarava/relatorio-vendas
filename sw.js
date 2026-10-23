@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vendas-cache-v5';
+const CACHE_NAME = 'vendas-cache-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -28,6 +28,13 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (!(event.request.url.indexOf('http') === 0)) return;
+
+  // Do not cache non-GET requests or API requests (Supabase, Google Apps Script)
+  if (event.request.method !== 'GET' ||
+      event.request.url.includes('supabase.co') ||
+      event.request.url.includes('script.google.com')) {
+    return;
+  }
 
   // Estratégia Network-First para documentos (HTML), Cache-First para o resto
   const isDocument = event.request.mode === 'navigate';
