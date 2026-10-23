@@ -696,7 +696,7 @@
             const total = quantity * unitPrice;
             const paymentMethod = document.getElementById('paymentMethod').value;
 
-            if (!date || !product || !quantity || !paymentMethod) {
+            if (!date || !product || !quantity || isNaN(unitPrice) || !paymentMethod) {
                 window.showToast("Preencha todos os campos!", "error");
                 return;
             }
@@ -742,9 +742,11 @@
                 if (editingId) {
                     const { error } = await db.from('sales').update(supabaseSaleData).eq('id', editingId);
                     if (error) throw error;
+                    window.showToast("Venda atualizada com sucesso!", "success");
                 } else {
                     const { error } = await db.from('sales').insert([supabaseSaleData]);
                     if (error) throw error;
+                    window.showToast("Venda adicionada com sucesso!", "success");
                 }
 
                 editingId = null;
